@@ -25,12 +25,68 @@ enum AuthProvider {
 
 model User {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  username      String
+  name          String
   email         String        @unique
   password      String?
+  photo         String?
   role          Role          @default(pengguna)
   googleId      String?
+  otpCode       String?
+  otpExpired    DateTime?
   authProvider  AuthProvider  @default(local)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  pengrajinProfile  PengrajinProfile?
+
+  reviews           Review[] @relation("UserReview")
+
+  pengrajinReviews  Review[] @relation("PengrajinReview")
+}
+
+//VIDEO
+model TutorialVideo {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  videoUrl   String
+  thumbnail  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model PengrajinProfile {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId        String    @unique @db.ObjectId
+
+  alamat        String
+  noTelpon      String
+
+  pengalaman    String
+
+  deskripsi     String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User @relation(fields: [userId], references: [id])
+}
+
+//REVIEW 
+model Review {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId       String    @db.ObjectId
+
+  pengrajinId  String    @db.ObjectId
+
+  rating       Int
+
+  ulasan       String
+
+  createdAt    DateTime  @default(now())
+
+  user         User @relation("UserReview", fields: [userId], references: [id])
+
+  pengrajin    User @relation("PengrajinReview", fields: [pengrajinId], references: [id])
 }
