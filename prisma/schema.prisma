@@ -42,6 +42,10 @@ model User {
   reviews           Review[] @relation("UserReview")
 
   pengrajinReviews  Review[] @relation("PengrajinReview")
+
+  bookingUser PelatihanBooking[] @relation("UserBooking")
+
+  bookingPengrajin PelatihanBooking[] @relation("PengrajinBooking")
 }
 
 //VIDEO
@@ -89,4 +93,79 @@ model Review {
   user         User @relation("UserReview", fields: [userId], references: [id])
 
   pengrajin    User @relation("PengrajinReview", fields: [pengrajinId], references: [id])
+}
+
+//KELAS PELATIHAN
+model KelasPelatihan {
+
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  namaKelas   String
+
+  deskripsi   String
+
+  harga       Int
+
+  durasi      String
+
+  lokasi      String   @default("Balai Desa Dukuhsembung")
+
+  thumbnail   String?
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime @updatedAt
+
+  bookings PelatihanBooking[]
+}
+
+//BOOKING PELATIHAN
+model PelatihanBooking {
+
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  orderId        String? 
+
+  userId         String   @db.ObjectId
+
+  pengrajinId    String   @db.ObjectId
+
+  kelasId        String   @db.ObjectId
+
+  namaLengkap    String
+
+  noTelpon       String
+
+  tanggal        String
+
+  jamPelatihan     String
+
+  jadwalPelatihan  DateTime
+
+  lokasi         String   @default("Balai Desa Dukuhsembung")
+
+  statusKelas    String   @default("menunggu")
+
+  sudahReview Boolean @default(false)
+
+  sertifikatUrl  String?
+
+  totalBayar     Int
+
+  metodeBayar    String
+
+  statusBayar    String   @default("pending")
+
+  buktiBayar     String?
+
+  createdAt      DateTime @default(now())
+
+  updatedAt      DateTime @updatedAt
+
+  // RELATION
+  user           User @relation("UserBooking", fields: [userId], references: [id])
+
+  pengrajin      User @relation("PengrajinBooking", fields: [pengrajinId], references: [id])
+
+  kelas          KelasPelatihan @relation(fields: [kelasId], references: [id])
 }

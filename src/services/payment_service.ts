@@ -1,6 +1,12 @@
-import Midtrans from "midtrans-client";
+import midtransClient from "midtrans-client";
 
-const snap = new Midtrans.Snap({
+const snap = new midtransClient.Snap({
+  isProduction: false,
+  serverKey: process.env.MIDTRANS_SERVER_KEY!,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY!,
+});
+
+const coreApi = new midtransClient.CoreApi({
   isProduction: false,
   serverKey: process.env.MIDTRANS_SERVER_KEY!,
   clientKey: process.env.MIDTRANS_CLIENT_KEY!,
@@ -9,25 +15,68 @@ const snap = new Midtrans.Snap({
 export const createTransactionService = async (
   orderId: string,
   amount: number,
-  name: string,
-  email: string
+  metodeBayar: string,
 ) => {
-  const parameter = {
-    transaction_details: {
-      order_id: orderId,
-      gross_amount: amount,
-    },
-    customer_details: {
-      first_name: name,
-      email: email,
-    },
-  };
+  try {
+    console.log("METODE BAYAR =", metodeBayar);
 
-  const transaction = await snap.createTransaction(parameter);
+    // =====================
+    // BCA VIRTUAL ACCOUNT
+    // =====================
+    if (metodeBayar.toUpperCase() === "BCA_VA") {
+      const parameter = {
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: amount,
+        },
+        enabled_payments: ["bca_va"], // snap handle BCA
+      };
 
-  return {
-    success: true,
-    token: transaction.token,
-    redirectUrl: transaction.redirect_url,
-  };
+      const transaction: any = await snap.createTransaction(parameter);
+
+      return {
+        success: true,
+        token: transaction.token,
+        redirect_url: transaction.redirect_url,
+        vaNumber: null, // VA number akan muncul di halaman Snap
+        metodeBayar: "BCA_VA",
+      };
+    }
+
+    // =====================
+    // GOPAY
+    // =====================
+    if (metodeBayar.toUpperCase() === "GOPAY") {
+      const parameter = {
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: amount,
+        },
+
+        enabled_payments: ["gopay"],
+      };
+
+      const transaction: any = await snap.createTransaction(parameter);
+
+      return {
+        success: true,
+        token: transaction.token,
+        redirect_url: transaction.redirect_url,
+        vaNumber: null,
+        metodeBayar: "GOPAY",
+      };
+    }
+
+    // =====================
+    // INVALID PAYMENT
+    // =====================
+    throw new Error(`Metode pembayaran tidak didukung: ${metodeBayar}`);
+  } catch (error: any) {
+    console.error(
+      "[MIDTRANS ERROR]",
+      error?.ApiResponse ?? error?.message ?? error,
+    );
+
+    throw error;
+  }
 };
