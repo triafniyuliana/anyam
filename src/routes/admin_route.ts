@@ -14,6 +14,13 @@ import {
   createTutorialVideo,
   updateTutorialVideo,
   deleteTutorialVideo,
+  getProduk,
+  getDetailProduk,
+  createProduk,
+  updateProduk,
+  deleteProduk,
+  getPesananAdmin,
+  kirimPesanan,
 } from "../controller/admin_controller";
 
 const router = Router();
@@ -58,5 +65,47 @@ router.put(
 
 // DELETE VIDEO
 router.delete("/delete-tutorial-video/:id", deleteTutorialVideo);
+
+// GET PRODUK
+router.get(
+  "/produk",
+  getProduk,
+);
+
+// GET DETAIL PRODUK
+router.get(
+  "/produk/:id",
+  getDetailProduk,
+);
+
+// CREATE PRODUK
+router.post(
+  "/create-produk",
+  upload.single("foto"),
+  createProduk,
+);
+
+// UPDATE PRODUK
+router.put(
+  "/update-produk/:id",
+  upload.single("foto"),
+  updateProduk,
+);
+
+// DELETE PRODUK
+router.delete(
+  "/delete-produk/:id",
+  deleteProduk,
+);
+
+router.get(
+  "/pesanan",
+  getPesananAdmin,
+);
+
+router.put(
+  "/pesanan/:pesananId/kirim",
+  kirimPesanan,
+);
 
 export default router;

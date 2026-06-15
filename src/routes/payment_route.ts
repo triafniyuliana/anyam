@@ -7,8 +7,10 @@ const router = express.Router();
 // CREATE TRANSACTION
 router.post("/create", createTransaction);
 
+//WEBHOOK
 router.post("/webhook", handleWebhook);
 
+//ORDER
 router.get("/status/:orderId", checkStatus);
 
 export default router;

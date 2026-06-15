@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-
+import { io } from "../server";
 import { prisma } from "../lib/prisma";
 
 // GET USERS PROFILE
@@ -438,3 +438,217 @@ export const deleteTutorialVideoService =
 
     return true;
   };
+
+//GET PRODUK
+export const getProdukService = async () => {
+  return await prisma.produk.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
+//GET DETAIL PRODUK
+export const getDetailProdukService = async (
+  id: string
+) => {
+  const produk =
+    await prisma.produk.findUnique({
+      where: {
+        id,
+      },
+    });
+
+  if (!produk) {
+    throw new Error(
+      "Produk tidak ditemukan"
+    );
+  }
+
+  return produk;
+};
+//CREATE PRODUK
+export const createProdukService = async (
+  data: any
+) => {
+  const {
+    namaProduk,
+    deskripsi,
+    harga,
+    stok,
+    foto,
+    kategori,
+    ukuran,
+    bahan,
+  } = data;
+
+  if (
+    !namaProduk ||
+    !deskripsi ||
+    !harga ||
+    !stok ||
+    !kategori
+  ) {
+    throw new Error(
+      "Semua field wajib diisi"
+    );
+  }
+
+  return await prisma.produk.create({
+    data: {
+      namaProduk,
+      deskripsi,
+      harga: Number(harga),
+      stok: Number(stok),
+      foto,
+      kategori,
+      ukuran,
+      bahan,
+    },
+  });
+};
+//UPDATE PRODUK
+export const updateProdukService = async (
+  id: string,
+  data: any
+) => {
+  const produk =
+    await prisma.produk.findUnique({
+      where: {
+        id,
+      },
+    });
+
+  if (!produk) {
+    throw new Error(
+      "Produk tidak ditemukan"
+    );
+  }
+
+  const {
+    namaProduk,
+    deskripsi,
+    harga,
+    stok,
+    foto,
+    kategori,
+    ukuran,
+    bahan,
+  } = data;
+
+  return await prisma.produk.update({
+    where: {
+      id,
+    },
+
+    data: {
+      namaProduk,
+      deskripsi,
+      harga: Number(harga),
+      stok: Number(stok),
+      kategori,
+      ukuran,
+      bahan,
+
+      foto:
+        foto ??
+        produk.foto,
+    },
+  });
+};
+
+//DELETE PRODUK
+export const deleteProdukService = async (
+  id: string
+) => {
+  const produk =
+    await prisma.produk.findUnique({
+      where: {
+        id,
+      },
+    });
+
+  if (!produk) {
+    throw new Error(
+      "Produk tidak ditemukan"
+    );
+  }
+
+  await prisma.produk.delete({
+    where: {
+      id,
+    },
+  });
+
+  return true;
+};
+
+export const getPesananAdminService =
+  async () => {
+
+    const pesanan =
+      await prisma.pesanan.findMany({
+        include: {
+          user: true,
+
+          detailPesanan: {
+            include: {
+              produk: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+    return {
+      success: true,
+      pesanan,
+    };
+  };
+
+export const kirimPesananService = async (
+  pesananId: string,
+  nomorResi: string,
+) => {
+
+  const pesanan =
+    await prisma.pesanan.update({
+      where: {
+        id: pesananId,
+      },
+
+      data: {
+        statusPesanan: "dikirim",
+        nomorResi,
+      },
+    });
+
+  await prisma.notifikasi.create({
+    data: {
+      userId: pesanan.userId,
+
+      judul: "Pesanan Dikirim",
+
+      pesan:
+        `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
+    },
+  });
+
+  io.emit(
+    "notifikasi",
+    {
+      judul: "Pesanan Dikirim",
+
+      pesan:
+        `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
+    },
+  );
+
+  return {
+    success: true,
+    data: pesanan,
+  };
+};

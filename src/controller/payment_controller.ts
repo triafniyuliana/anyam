@@ -4,9 +4,9 @@ import { prisma } from "../lib/prisma";
 
 export const createTransaction = async (req: Request, res: Response) => {
   try {
-    const { orderId, amount, metodeBayar } = req.body;
+    const { orderId, amount } = req.body;
 
-    const result = await createTransactionService(orderId, amount, metodeBayar);
+    const result = await createTransactionService(orderId, amount);
 
     return res.json(result);
   } catch (error: any) {
@@ -17,25 +17,43 @@ export const createTransaction = async (req: Request, res: Response) => {
   }
 };
 
-export const handleWebhook = async (req: Request, res: Response) => {
+export const handleWebhook = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const notif = req.body;
-    console.log("WEBHOOK MIDTRANS:", notif);
 
-    const orderId = notif.order_id;
-    const transactionStatus = notif.transaction_status;
-    const fraudStatus = notif.fraud_status;
+    console.log(
+      "WEBHOOK MIDTRANS:",
+      JSON.stringify(notif, null, 2),
+    );
 
-    console.log("ORDER ID:", orderId); // tambah ini
-    console.log("STATUS:", transactionStatus); // tambah ini
+    const orderId =
+      notif.order_id as string;
 
-    let statusBayar = "menunggu";
+    const transactionStatus =
+      notif.transaction_status;
 
-    if (transactionStatus === "settlement" || transactionStatus === "capture") {
-      if (fraudStatus === "accept" || !fraudStatus) {
+    const fraudStatus =
+      notif.fraud_status;
+
+    let statusBayar =
+      "menunggu";
+
+    if (
+      transactionStatus === "settlement" ||
+      transactionStatus === "capture"
+    ) {
+      if (
+        fraudStatus === "accept" ||
+        !fraudStatus
+      ) {
         statusBayar = "lunas";
       }
-    } else if (transactionStatus === "pending") {
+    } else if (
+      transactionStatus === "pending"
+    ) {
       statusBayar = "menunggu";
     } else if (
       transactionStatus === "cancel" ||
@@ -45,32 +63,126 @@ export const handleWebhook = async (req: Request, res: Response) => {
       statusBayar = "gagal";
     }
 
-    // Ganti where id → orderId (field yang simpan order_id Midtrans)
-    const updated = await prisma.pelatihanBooking.updateMany({
-      where: { orderId: orderId }, // ✅ ganti ke field orderId
-      data: { statusBayar },
+    // BOOKING PELATIHAN
+    if (
+      orderId.startsWith(
+        "BOOKING-",
+      )
+    ) {
+      await prisma.pelatihanBooking.updateMany({
+        where: {
+          orderId,
+        },
+
+        data: {
+          statusBayar,
+        },
+      });
+
+      console.log(
+        "BOOKING UPDATED:",
+        orderId,
+      );
+    }
+
+    // PESANAN PRODUK
+    if (
+      orderId.startsWith(
+        "ORDER-",
+      )
+    ) {
+      await prisma.pesanan.updateMany({
+        where: {
+          orderId,
+        },
+
+        data: {
+          statusBayar,
+        },
+      });
+
+      console.log(
+        "PESANAN UPDATED:",
+        orderId,
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      status: "ok",
     });
-
-    console.log("UPDATED:", updated); // tambah ini
-
-    return res.status(200).json({ status: "ok" });
   } catch (error: any) {
-    console.error("Webhook error detail:", error); // lihat error lengkap
-    return res.status(500).json({ message: error.message });
+    console.error(
+      "WEBHOOK ERROR:",
+      error,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message,
+    });
   }
 };
 
-export const checkStatus = async (req: Request, res: Response) => {
+export const checkStatus = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const orderId = req.params.orderId as string; // ✅ tambah as string
-    const booking = await prisma.pelatihanBooking.findFirst({
-      where: { orderId: orderId },
-    });
-    return res.json({ 
-      success: true, 
-      statusBayar: booking?.statusBayar 
+    const orderId =
+      req.params.orderId as string;
+
+    // BOOKING PELATIHAN
+    if (
+      orderId.startsWith(
+        "BOOKING-",
+      )
+    ) {
+      const booking =
+        await prisma.pelatihanBooking.findFirst({
+          where: {
+            orderId,
+          },
+        });
+
+      return res.json({
+        success: true,
+        statusBayar:
+          booking?.statusBayar,
+      });
+    }
+
+    // PESANAN PRODUK
+    if (
+      orderId.startsWith(
+        "ORDER-",
+      )
+    ) {
+      const pesanan =
+        await prisma.pesanan.findFirst({
+          where: {
+            orderId,
+          },
+        });
+
+      return res.json({
+        success: true,
+        statusBayar:
+          pesanan?.statusBayar,
+      });
+    }
+
+    return res.status(404).json({
+      success: false,
+      message:
+        "Order tidak ditemukan",
     });
   } catch (error: any) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message,
+    });
   }
 };

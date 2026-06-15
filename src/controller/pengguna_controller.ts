@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { prisma } from "../lib/prisma";
 
 import {
   getProfileService,
@@ -11,6 +12,16 @@ import {
   getRiwayatBookingService,
   getJadwalKelasService,
   createReviewService,
+  getSertifikatService,
+  getProdukUserService,
+  getDetailProdukUserService,
+  createKeranjangService,
+  getKeranjangService,
+  deleteKeranjangService,
+  updateKeranjangQtyService,
+  checkoutKeranjangService,
+  getRiwayatPembelianService,
+  getNotifikasiService,
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -75,17 +86,19 @@ export const getPengrajin = async (req: Request, res: Response) => {
 // GET KELAS
 export const getKelas = async (req: Request, res: Response) => {
   try {
-    const result = await getKelasService();
+    const userId = (req as any).user.id;
+
+    const result = await getKelasService(userId);
 
     return res.status(200).json(result);
   } catch (error: any) {
     return res.status(400).json({
       success: false,
-
       message: error.message,
     });
   }
 };
+
 // CREATE KELAS
 export const createKelas = async (req: Request, res: Response) => {
   try {
@@ -143,6 +156,7 @@ export const getJadwalKelas = async (req: any, res: any) => {
   }
 };
 
+//TAMBAH REVIEW
 export const createReview = async (
   req: any,
   res: any,
@@ -162,3 +176,241 @@ export const createReview = async (
   }
 };
 
+//GET SERTIFIKAT
+export const getSertifikat = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = (req as any).user.id;
+
+    const result =
+      await getSertifikatService(userId);
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//GET PRODUK
+export const getProduk = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const result =
+      await getProdukUserService();
+
+    return res.status(200).json(
+      result
+    );
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//GET DETAIL PRODUK
+export const getDetailProduk = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const id =
+      req.params.id as string;
+
+    const result =
+      await getDetailProdukUserService(
+        id
+      );
+
+    return res.status(200).json(
+      result
+    );
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//TAMBAH KERANJANG
+export const createKeranjang = async (
+  req: any,
+  res: Response
+) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      produkId,
+      qty,
+    } = req.body;
+
+    const result =
+      await createKeranjangService(
+        userId,
+        produkId,
+        Number(qty),
+      );
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Produk berhasil ditambahkan ke keranjang",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//GET KERANJANG
+export const getKeranjang = async (
+  req: any,
+  res: Response
+) => {
+  try {
+    const userId = req.user.id;
+
+    const result =
+      await getKeranjangService(
+        userId,
+      );
+
+    return res.status(200).json(
+      result
+    );
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//HAPUS KERANJANG
+export const deleteKeranjang = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const id =
+      req.params.id as string;
+
+    await deleteKeranjangService(
+      id
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Produk berhasil dihapus dari keranjang",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateKeranjangQty = async (
+  req: any,
+  res: Response,
+) => {
+  try {
+    const { id } = req.params;
+
+    const { qty } = req.body;
+
+    const result =
+      await updateKeranjangQtyService(
+        id,
+        Number(qty),
+      );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const checkoutKeranjang = async (
+  req: any,
+  res: Response,
+) => {
+  try {
+    const result =
+      await checkoutKeranjangService(
+        req.user.id,
+        req.body,
+      );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getRiwayatPembelian = async (
+  req: any,
+  res: Response,
+) => {
+  try {
+
+    const userId = req.user.id;
+
+    const result =
+      await getRiwayatPembelianService(
+        userId,
+      );
+
+    return res.json(result);
+
+  } catch (error: any) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getNotifikasi = async (
+  req: any,
+  res: Response,
+) => {
+  try {
+
+    const result =
+      await getNotifikasiService(
+        req.user.id,
+      );
+
+    return res.json(result);
+
+  } catch (error: any) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

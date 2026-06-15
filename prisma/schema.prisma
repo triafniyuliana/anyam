@@ -46,6 +46,12 @@ model User {
   bookingUser PelatihanBooking[] @relation("UserBooking")
 
   bookingPengrajin PelatihanBooking[] @relation("PengrajinBooking")
+
+  pesanan           Pesanan[]
+
+  keranjang Keranjang[]
+
+  notifikasi        Notifikasi[]
 }
 
 //VIDEO
@@ -124,7 +130,7 @@ model PelatihanBooking {
 
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  orderId        String? 
+  orderId        String @unique 
 
   userId         String   @db.ObjectId
 
@@ -169,3 +175,106 @@ model PelatihanBooking {
 
   kelas          KelasPelatihan @relation(fields: [kelasId], references: [id])
 }
+
+model Produk {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  namaProduk  String
+  deskripsi   String
+  harga       Int
+  stok        Int
+
+  foto        String?
+
+  kategori    String
+
+  ukuran      String?
+  bahan       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  detailPesanan DetailPesanan[]
+
+  keranjang Keranjang[]
+}
+
+model Pesanan {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId          String   @db.ObjectId
+
+  orderId         String   @unique
+
+  namaPenerima    String
+  noTelpon        String
+  alamat          String
+
+  totalBayar      Int
+
+  metodeBayar     String
+
+  statusBayar     String   @default("menunggu")
+
+  statusPesanan   String   @default("diproses")
+
+  nomorResi       String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User @relation(fields: [userId], references: [id])
+
+  detailPesanan   DetailPesanan[]
+}
+
+model DetailPesanan {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  pesananId   String   @db.ObjectId
+  produkId    String   @db.ObjectId
+
+  qty         Int
+
+  harga       Int
+
+  subtotal    Int
+
+  pesanan     Pesanan @relation(fields: [pesananId], references: [id])
+
+  produk      Produk  @relation(fields: [produkId], references: [id])
+}
+
+model Keranjang {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId      String   @db.ObjectId
+  produkId    String   @db.ObjectId
+
+  qty         Int      @default(1)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  produk      Produk   @relation(fields: [produkId], references: [id])
+}
+
+model Notifikasi {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId      String   @db.ObjectId
+
+  judul       String
+  pesan       String
+
+  dibaca      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+
+

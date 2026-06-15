@@ -12,6 +12,13 @@ import {
   createTutorialVideoService,
   updateTutorialVideoService,
   deleteTutorialVideoService,
+  getProdukService,
+  getDetailProdukService,
+  createProdukService,
+  updateProdukService,
+  deleteProdukService,
+  kirimPesananService,
+  getPesananAdminService,
 } from "../services/admin_service";
 
 // GET PROFILE USERS
@@ -338,3 +345,211 @@ export const deleteTutorialVideo =
       });
     }
   };
+
+// GET PRODUK
+export const getProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getProdukService();
+
+    return res.status(200).json({
+      success: true,
+      message: "Berhasil mengambil data produk",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// GET DETAIL PRODUK
+export const getDetailProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const id = req.params.id as string;
+
+    const result =
+      await getDetailProdukService(id);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// CREATE PRODUK
+export const createProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const data = {
+      namaProduk: req.body.namaProduk,
+
+      deskripsi: req.body.deskripsi,
+
+      harga: Number(req.body.harga),
+
+      stok: Number(req.body.stok),
+
+      kategori: req.body.kategori,
+
+      ukuran: req.body.ukuran,
+
+      bahan: req.body.bahan,
+
+      foto: req.file
+        ? req.file.filename
+        : null,
+    };
+
+    const result =
+      await createProdukService(data);
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Produk berhasil ditambahkan",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// UPDATE PRODUK
+export const updateProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const id = req.params.id as string;
+
+    const data = {
+      namaProduk: req.body.namaProduk,
+
+      deskripsi: req.body.deskripsi,
+
+      harga: Number(req.body.harga),
+
+      stok: Number(req.body.stok),
+
+      kategori: req.body.kategori,
+
+      ukuran: req.body.ukuran,
+
+      bahan: req.body.bahan,
+
+      foto: req.file
+        ? req.file.filename
+        : undefined,
+    };
+
+    const result =
+      await updateProdukService(
+        id,
+        data,
+      );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Produk berhasil diupdate",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// DELETE PRODUK
+export const deleteProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const id = req.params.id as string;
+
+    await deleteProdukService(id);
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Produk berhasil dihapus",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getPesananAdmin =
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    try {
+
+      const result =
+        await getPesananAdminService();
+
+      return res.json(result);
+
+    } catch (error: any) {
+
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+export const kirimPesanan = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+
+    const pesananId =
+      req.params.pesananId as string;
+
+    const nomorResi =
+      req.body.nomorResi as string;
+
+    const result =
+      await kirimPesananService(
+        pesananId,
+        nomorResi,
+      );
+
+    return res.json(result);
+
+  } catch (error: any) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
