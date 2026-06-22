@@ -127,13 +127,11 @@ export const getPengrajinService = async () => {
 
     include: {
       pengrajinProfile: true,
-
       pengrajinReviews: true,
     },
   });
 
   const result = pengrajin.map((item) => {
-
     const totalRating = item.pengrajinReviews.reduce(
       (sum, review) => sum + review.rating,
       0,
@@ -149,7 +147,9 @@ export const getPengrajinService = async () => {
 
       name: item.name,
 
-      photo: item.photo,
+      photo: item.photo
+        ? `/uploads/${item.photo}`
+        : null,
 
       pengalaman: item.pengrajinProfile?.pengalaman ?? "-",
 
@@ -165,11 +165,9 @@ export const getPengrajinService = async () => {
 
   return {
     success: true,
-
     pengrajin: result,
   };
 };
-
 // CREATE KELAS
 export const createKelasService = async (data: any) => {
   const { namaKelas, deskripsi, harga, durasi, lokasi } = data;
@@ -599,17 +597,24 @@ export const getProdukUserService =
         },
       });
 
+    const result = produk.map((item) => ({
+      ...item,
+
+      foto: item.foto
+        ? `/uploads/${item.foto}`
+        : null,
+    }));
+
     return {
       success: true,
-      produk,
+      produk: result,
     };
   };
 
 //GET DETAIL PRODUK
 export const getDetailProdukUserService =
-  async (
-    id: string
-  ) => {
+  async (id: string) => {
+
     const produk =
       await prisma.produk.findUnique({
         where: {
@@ -625,7 +630,12 @@ export const getDetailProdukUserService =
 
     return {
       success: true,
-      produk,
+      produk: {
+        ...produk,
+        foto: produk.foto
+          ? `/uploads/${produk.foto}`
+          : null,
+      },
     };
   };
 
@@ -682,9 +692,22 @@ export const getKeranjangService =
         },
       });
 
+    const result =
+      keranjang.map((item) => ({
+        ...item,
+
+        produk: {
+          ...item.produk,
+
+          foto: item.produk?.foto
+            ? `/uploads/${item.produk.foto}`
+            : null,
+        },
+      }));
+
     return {
       success: true,
-      keranjang,
+      keranjang: result,
     };
   };
 
@@ -740,7 +763,7 @@ export const updateKeranjangQtyService =
     };
   };
 
-  //CHECKOUT
+//CHECKOUT
 export const checkoutKeranjangService =
   async (
     userId: string,
@@ -858,6 +881,7 @@ export const checkoutKeranjangService =
     };
   };
 
+//RIWAYAT PEMBELIAN
 export const getRiwayatPembelianService =
   async (userId: string) => {
 
@@ -886,7 +910,8 @@ export const getRiwayatPembelianService =
     };
   };
 
-  export const getNotifikasiService =
+//NOTIFIKASI
+export const getNotifikasiService =
   async (userId: string) => {
 
     const data =
@@ -905,3 +930,31 @@ export const getRiwayatPembelianService =
       data,
     };
   };
+
+//HAPUS AKUN
+export const deleteAkunService = async (
+  userId: string,
+) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    throw new Error(
+      "User tidak ditemukan",
+    );
+  }
+
+  await prisma.user.delete({
+    where: {
+      id: userId,
+    },
+  });
+
+  return {
+    success: true,
+    message: "Akun berhasil dihapus",
+  };
+};

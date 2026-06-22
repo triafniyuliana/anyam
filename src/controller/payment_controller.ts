@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { createTransactionService } from "../services/payment_service";
 import { prisma } from "../lib/prisma";
 
+
+//TAMBAH TRANSAKSI
 export const createTransaction = async (req: Request, res: Response) => {
   try {
     const { orderId, amount } = req.body;
@@ -17,6 +19,7 @@ export const createTransaction = async (req: Request, res: Response) => {
   }
 };
 
+//HANDLEWEBHOOK
 export const handleWebhook = async (
   req: Request,
   res: Response,
@@ -69,6 +72,7 @@ export const handleWebhook = async (
         "BOOKING-",
       )
     ) {
+
       await prisma.pelatihanBooking.updateMany({
         where: {
           orderId,
@@ -78,6 +82,33 @@ export const handleWebhook = async (
           statusBayar,
         },
       });
+
+      if (statusBayar === "lunas") {
+
+        const booking =
+          await prisma.pelatihanBooking.findFirst({
+            where: {
+              orderId,
+            },
+          });
+
+        if (booking) {
+
+          await prisma.notifikasi.create({
+            data: {
+              userId:
+                booking.pengrajinId,
+
+              judul:
+                "Booking Baru",
+
+              pesan:
+                `${booking.namaLengkap} telah melakukan pembayaran pelatihan`,
+            },
+          });
+
+        }
+      }
 
       console.log(
         "BOOKING UPDATED:",
@@ -125,6 +156,7 @@ export const handleWebhook = async (
   }
 };
 
+//CHECK STATUS
 export const checkStatus = async (
   req: Request,
   res: Response,

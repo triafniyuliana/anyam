@@ -21,6 +21,7 @@ import {
   checkoutKeranjang,
   getRiwayatPembelian,
   getNotifikasi,
+  deleteAkun,
 } from "../controller/pengguna_controller";
 
 import { authMiddleware } from "../middleware/auth_middleware";
@@ -80,18 +81,16 @@ router.delete("/keranjang/:id", authMiddleware, deleteKeranjang);
 // UPDATE KERANJANG
 router.put("/keranjang/:id", authMiddleware, updateKeranjangQty,);
 
+//CHECKOUT
 router.post("/checkout", authMiddleware, checkoutKeranjang,);
 
-router.get(
-  "/riwayat-pembelian",
-  authMiddleware,
-  getRiwayatPembelian,
-);
+//RIWAYAT PEMBELIAN
+router.get("/riwayat-pembelian",authMiddleware,getRiwayatPembelian,);
 
-router.get(
-  "/notifikasi",
-  authMiddleware,
-  getNotifikasi,
-);
+//NOTIFIKASI
+router.get("/notifikasi",authMiddleware,getNotifikasi,);
+
+//HAPUS AKUN
+router.delete("/delete-account",authMiddleware,deleteAkun,);
 
 export default router;

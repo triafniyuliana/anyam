@@ -8,6 +8,66 @@ import { generateOTP } from "../utils/otp";
 
 import { transporter } from "../utils/mail";
 
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID
+);
+
+//LOGIN GOOGLE
+export const googleLoginService = async (idToken: string) => {
+  console.log("=== GOOGLE LOGIN DEBUG ===");
+  console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+  
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+
+  if (!payload?.email) {
+    throw new Error("Email Google tidak ditemukan");
+  }
+
+  let user = await prisma.user.findUnique({
+    where: {
+      email: payload.email,
+    },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name: payload.name || "User Google",
+        email: payload.email,
+        googleId: payload.sub,
+        authProvider: "google",
+        role: "pengguna",
+      },
+    });
+  }
+
+  const token = generateToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  return {
+    success: true,
+    message: "Login Google berhasil",
+    token,
+
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
+};
+
 // REGISTER
 export const registerService = async ({ name, email, password }: any) => {
   // VALIDASI
