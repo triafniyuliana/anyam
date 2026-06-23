@@ -22,6 +22,8 @@ import {
   getRiwayatPembelian,
   getNotifikasi,
   deleteAkun,
+  getAktivitas,
+  logout,
 } from "../controller/pengguna_controller";
 
 import { authMiddleware } from "../middleware/auth_middleware";
@@ -92,5 +94,10 @@ router.get("/notifikasi",authMiddleware,getNotifikasi,);
 
 //HAPUS AKUN
 router.delete("/delete-account",authMiddleware,deleteAkun,);
+
+//LOG AKTIVITAS
+router.get("/aktivitas",authMiddleware,getAktivitas,);
+
+router.post("/logout",authMiddleware,logout,);
 
 export default router;

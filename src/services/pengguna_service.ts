@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import bcrypt from "bcryptjs";
 import { createTransactionService } from "./payment_service";
 import { generateSertifikat } from "../utils/generate_sertifikat";
+import { createActivity } from "../utils/activity";
 
 // GET PROFILE
 export const getProfileService = async (userId: string) => {
@@ -956,5 +957,35 @@ export const deleteAkunService = async (
   return {
     success: true,
     message: "Akun berhasil dihapus",
+  };
+};
+
+//LOG AKTIVITAS
+export const getAktivitasService = async (
+  userId: string,
+) => {
+  return await prisma.aktivitas.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
+//LOGOUT
+export const logoutService = async (
+  userId: string,
+) => {
+  await createActivity(
+    userId,
+    "Logout",
+    "Keluar dari aplikasi",
+  );
+
+  return {
+    success: true,
+    message: "Logout berhasil",
   };
 };

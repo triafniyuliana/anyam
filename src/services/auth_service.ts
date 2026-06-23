@@ -10,6 +10,8 @@ import { transporter } from "../utils/mail";
 
 import { OAuth2Client } from "google-auth-library";
 
+import { createActivity } from "../utils/activity";
+
 const googleClient = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID
 );
@@ -18,7 +20,7 @@ const googleClient = new OAuth2Client(
 export const googleLoginService = async (idToken: string) => {
   console.log("=== GOOGLE LOGIN DEBUG ===");
   console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
-  
+
   const ticket = await googleClient.verifyIdToken({
     idToken,
     audience: process.env.GOOGLE_CLIENT_ID,
@@ -53,6 +55,12 @@ export const googleLoginService = async (idToken: string) => {
     email: user.email,
     role: user.role,
   });
+
+  await createActivity(
+    user.id,
+    "Login Google",
+    "Berhasil masuk menggunakan akun Google",
+  );
 
   return {
     success: true,
@@ -108,6 +116,12 @@ export const registerService = async ({ name, email, password }: any) => {
       role: "pengguna",
     },
   });
+
+  await createActivity(
+    user.id,
+    "Registrasi",
+    "Berhasil membuat akun baru",
+  );
 
   return {
     success: true,
@@ -338,6 +352,12 @@ export const verifyOtpService = async ({ email, otp }: any) => {
     role: user.role,
   });
 
+  await createActivity(
+    user.id,
+    "Login",
+    "Berhasil masuk ke aplikasi",
+  );
+
   return {
     success: true,
     message: "Login berhasil",
@@ -397,6 +417,12 @@ export const requestResetPasswordService = async ({ email }: any) => {
     text: `Kode OTP Reset Password ${otp}`,
   });
 
+  await createActivity(
+    user.id,
+    "Lupa Password",
+    "Meminta OTP reset password",
+  );
+
   return {
     success: true,
     message: "OTP reset password berhasil dikirim",
@@ -447,6 +473,12 @@ export const resendOtpService = async ({ email }: any) => {
 
     text: `Kode OTP Anda ${otp}`,
   });
+
+  await createActivity(
+    user.id,
+    "Kirim Ulang OTP",
+    "Mengirim ulang kode OTP",
+  );
 
   return {
     success: true,
@@ -510,6 +542,12 @@ export const resetPasswordService = async ({
       otpExpired: null,
     },
   });
+
+  await createActivity(
+    user.id,
+    "Reset Password",
+    "Berhasil mengubah password akun",
+  );
 
   return {
     success: true,
