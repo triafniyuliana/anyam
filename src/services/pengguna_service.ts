@@ -320,6 +320,11 @@ export const createBookingService = async (
       kelas.harga,
     );
 
+  console.log("userId =", userId);
+  console.log("pengrajinId =", pengrajinId);
+  console.log("kelasId =", kelasId);
+  console.log("namaLengkap =", namaLengkap);  
+
   const booking =
     await prisma.pelatihanBooking.create({
       data: {
