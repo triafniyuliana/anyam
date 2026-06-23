@@ -22,6 +22,9 @@ import {
   checkoutKeranjangService,
   getRiwayatPembelianService,
   getNotifikasiService,
+  deleteAkunService,
+  getAktivitasService,
+  logoutService,
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -325,6 +328,7 @@ export const deleteKeranjang = async (
   }
 };
 
+//UPDATE KERANJANG QTY
 export const updateKeranjangQty = async (
   req: any,
   res: Response,
@@ -349,6 +353,7 @@ export const updateKeranjangQty = async (
   }
 };
 
+//CHECKOUT KERANJANG
 export const checkoutKeranjang = async (
   req: any,
   res: Response,
@@ -369,6 +374,7 @@ export const checkoutKeranjang = async (
   }
 };
 
+//GET RIWAYAT PEMBELIAN
 export const getRiwayatPembelian = async (
   req: any,
   res: Response,
@@ -393,6 +399,7 @@ export const getRiwayatPembelian = async (
   }
 };
 
+//GET NOTIFIKASI
 export const getNotifikasi = async (
   req: any,
   res: Response,
@@ -409,6 +416,71 @@ export const getNotifikasi = async (
   } catch (error: any) {
 
     return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//HAPUS AKUN
+export const deleteAkun = async (
+  req: any,
+  res: any,
+) => {
+  try {
+    const result =
+      await deleteAkunService(
+        req.user.id,
+      );
+
+    return res.status(200).json(
+      result,
+    );
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//LOG AKTIVITAS
+export const getAktivitas = async (
+  req: any,
+  res: any,
+) => {
+  try {
+    const data =
+      await getAktivitasService(
+        req.user.id,
+      );
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//LOGOUT
+export const logout = async (
+  req: any,
+  res: any,
+) => {
+  try {
+    const result =
+      await logoutService(
+        req.user.id,
+      );
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({
       success: false,
       message: error.message,
     });

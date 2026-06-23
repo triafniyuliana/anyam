@@ -9,7 +9,29 @@ import {
   requestResetPasswordService,
   resetPasswordService,
   loginAdminService,
+  googleLoginService,
 } from "../services/auth_service";
+
+//LOGIN GOOGLE
+export const googleLogin = async (
+  req: any,
+  res: any
+) => {
+  try {
+    const { idToken } = req.body;
+
+    const result = await googleLoginService(
+      idToken
+    );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // REGISTER
 export const register = async (req: Request, res: Response) => {
@@ -152,3 +174,5 @@ export const resetPassword = async (req: Request, res: Response) => {
     });
   }
 };
+
+

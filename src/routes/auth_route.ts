@@ -9,9 +9,13 @@ import {
   resetPassword,
   loginAdmin,
   resendOtp,
+  googleLogin,
 } from "../controller/auth_controller";
 
 const router = Router();
+
+//GOOGLE LOGIN
+router.post("/google",googleLogin);
 
 // REGISTER
 router.post("/register", register);
@@ -30,6 +34,7 @@ router.post("/verify-otp", verifyOtp);
 
 // RESEND OTP
 router.post("/resend-otp", resendOtp);
+
 // REQUEST RESET PASSWORD
 router.post("/request-reset-password", requestResetPassword);
 

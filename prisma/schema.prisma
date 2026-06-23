@@ -49,9 +49,11 @@ model User {
 
   pesanan           Pesanan[]
 
-  keranjang Keranjang[]
+  keranjang         Keranjang[]
 
   notifikasi        Notifikasi[]
+
+  aktivitas         Aktivitas[]
 }
 
 //VIDEO
@@ -176,6 +178,7 @@ model PelatihanBooking {
   kelas          KelasPelatihan @relation(fields: [kelasId], references: [id])
 }
 
+//PRODUK
 model Produk {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -199,6 +202,7 @@ model Produk {
   keranjang Keranjang[]
 }
 
+//PESANAN
 model Pesanan {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -228,6 +232,7 @@ model Pesanan {
   detailPesanan   DetailPesanan[]
 }
 
+//DETAIL PESANAN
 model DetailPesanan {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -245,6 +250,7 @@ model DetailPesanan {
   produk      Produk  @relation(fields: [produkId], references: [id])
 }
 
+//KERANJANG
 model Keranjang {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -261,6 +267,7 @@ model Keranjang {
   produk      Produk   @relation(fields: [produkId], references: [id])
 }
 
+//NOTIFIKASI
 model Notifikasi {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -276,5 +283,23 @@ model Notifikasi {
   user        User     @relation(fields: [userId], references: [id])
 }
 
+//LOG AKTIVITAS
+model Aktivitas {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId      String   @db.ObjectId
+
+  judul       String
+
+  deskripsi   String
+
+  tanggal     String
+
+  jam         String
+
+  createdAt   DateTime @default(now())
+
+  user        User @relation(fields: [userId], references: [id])
+}
 
 
