@@ -23,6 +23,7 @@ import {
   getNotifikasi,
   deleteAkun,
   getAktivitas,
+  createAktivitasVideo,
   logout,
 } from "../controller/pengguna_controller";
 
@@ -40,6 +41,9 @@ router.put("/profile", authMiddleware, upload.single("photo"), updateProfile,);
 
 // GET VIDEO TUTORIAL
 router.get("/tutorial-video", getTutorialVideos);
+
+//LOG VIDEO
+router.post("/aktivitas-video",authMiddleware,createAktivitasVideo,);
 
 // GET DAFTAR PENGRAJIN
 router.get("/pengrajin", getPengrajin);

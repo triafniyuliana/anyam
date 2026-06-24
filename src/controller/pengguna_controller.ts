@@ -25,6 +25,7 @@ import {
   deleteAkunService,
   getAktivitasService,
   logoutService,
+  createAktivitasVideoService,
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -70,6 +71,33 @@ export const getTutorialVideos = async (req: Request, res: Response) => {
     });
   }
 };
+
+//LOG VIDEO
+export const createAktivitasVideo =
+  async (
+    req: any,
+    res: Response,
+  ) => {
+    try {
+
+      const result =
+        await createAktivitasVideoService(
+          req.user.id,
+          req.body.videoId,
+        );
+
+      return res.status(200).json(
+        result,
+      );
+
+    } catch (error: any) {
+
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
 
 // GET DAFTAR PENGRAJIN
 export const getPengrajin = async (req: Request, res: Response) => {
