@@ -241,17 +241,29 @@ export const createTutorialVideo =
     res: Response,
   ) => {
     try {
+
+      const files =
+        req.files as {
+          [fieldname: string]:
+            Express.Multer.File[];
+        };
+
+      const thumbnail =
+        files?.thumbnail?.[0];
+
+      const video =
+        files?.video?.[0];
+
       const data = {
-        title:
-          req.body.title,
+        title: req.body.title,
 
-        videoUrl:
-          req.body.videoUrl,
+        thumbnail: thumbnail
+          ? `/uploads/${thumbnail.filename}`
+          : "",
 
-        thumbnail:
-          req.file
-            ? req.file.filename
-            : "",
+        videoUrl: video
+          ? `/uploads/${video.filename}`
+          : "",
       };
 
       const result =
@@ -265,15 +277,18 @@ export const createTutorialVideo =
           "Video berhasil ditambahkan",
         data: result,
       });
+
     } catch (error: any) {
+
+      console.log(error);
+
       return res.status(500).json({
         success: false,
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
-
+  
 // UPDATE VIDEO
 export const updateTutorialVideo =
   async (
@@ -281,26 +296,15 @@ export const updateTutorialVideo =
     res: Response,
   ) => {
     try {
+
       const id =
         req.params.id as string;
-
-      const data = {
-        title:
-          req.body.title,
-
-        videoUrl:
-          req.body.videoUrl,
-
-        thumbnail:
-          req.file
-            ? req.file.filename
-            : undefined,
-      };
 
       const result =
         await updateTutorialVideoService(
           id,
-          data,
+          req.body,
+          req.file,
         );
 
       return res.status(200).json({
@@ -309,7 +313,9 @@ export const updateTutorialVideo =
           "Video berhasil diupdate",
         data: result,
       });
+
     } catch (error: any) {
+
       return res.status(500).json({
         success: false,
         message:

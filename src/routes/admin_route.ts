@@ -50,33 +50,50 @@ router.get("/tutorial-video", getTutorialVideo);
 router.get("/tutorial-video/:id", getDetailTutorialVideo);
 
 // CREATE VIDEO
-router.post("/create-tutorial-video",upload.single("thumbnail"),createTutorialVideo,);
+router.post(
+  "/create-tutorial-video",
+  upload.fields([
+    {
+      name: "thumbnail",
+      maxCount: 1,
+    },
+    {
+      name: "video",
+      maxCount: 1,
+    },
+  ]),
+  createTutorialVideo,
+);
 
 // UPDATE VIDEO
-router.put("/update-tutorial-video/:id",upload.single("thumbnail"),updateTutorialVideo,);
+router.put(
+  "/update-tutorial-video/:id",
+  upload.single("video"),
+  updateTutorialVideo,
+);
 
 // DELETE VIDEO
 router.delete("/delete-tutorial-video/:id", deleteTutorialVideo);
 
 // GET PRODUK
-router.get("/produk",getProduk,);
+router.get("/produk", getProduk,);
 
 // GET DETAIL PRODUK
-router.get("/produk/:id",getDetailProduk,);
+router.get("/produk/:id", getDetailProduk,);
 
 // CREATE PRODUK
-router.post("/create-produk",upload.single("foto"),createProduk,);
+router.post("/create-produk", upload.single("foto"), createProduk,);
 
 // UPDATE PRODUK
-router.put("/update-produk/:id",upload.single("foto"),updateProduk,);
+router.put("/update-produk/:id", upload.single("foto"), updateProduk,);
 
 // DELETE PRODUK
-router.delete("/delete-produk/:id",deleteProduk,);
+router.delete("/delete-produk/:id", deleteProduk,);
 
 //PESANAN
-router.get("/pesanan",getPesananAdmin,);
+router.get("/pesanan", getPesananAdmin,);
 
 //kIRIM PESANAN
-router.put("/pesanan/:pesananId/kirim",kirimPesanan,);
+router.put("/pesanan/:pesananId/kirim", kirimPesanan,);
 
 export default router;

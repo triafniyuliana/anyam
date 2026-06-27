@@ -342,7 +342,10 @@ export const getDetailTutorialVideoService =
 
 // CREATE VIDEO
 export const createTutorialVideoService =
-  async (data: any) => {
+  async (
+    data: any,
+  ) => {
+
     const {
       title,
       videoUrl,
@@ -351,7 +354,8 @@ export const createTutorialVideoService =
 
     if (
       !title ||
-      !videoUrl
+      !videoUrl ||
+      !thumbnail
     ) {
       throw new Error(
         "Semua field wajib diisi",
@@ -375,12 +379,9 @@ export const updateTutorialVideoService =
   async (
     id: string,
     data: any,
+    file?: any,
   ) => {
-    const {
-      title,
-      videoUrl,
-      thumbnail,
-    } = data;
+    const { title } = data;
 
     const checkVideo =
       await prisma.tutorialVideo.findUnique({
@@ -403,10 +404,12 @@ export const updateTutorialVideoService =
 
         data: {
           title,
-          videoUrl,
+
+          videoUrl: file
+            ? `/uploads/${file.filename}`
+            : checkVideo.videoUrl,
 
           thumbnail:
-            thumbnail ||
             checkVideo.thumbnail,
         },
       });

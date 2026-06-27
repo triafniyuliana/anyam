@@ -97,6 +97,12 @@ export const updateProfileService = async (
     },
   });
 
+  await createActivity(
+    userId,
+    "Update Profil",
+    "Memperbarui data profil akun",
+  );
+
   return {
     success: true,
     message: "Profil berhasil diperbarui",
@@ -119,6 +125,37 @@ export const getTutorialVideosService = async () => {
   };
 };
 
+//LOG VIDEO
+export const createAktivitasVideoService =
+  async (
+    userId: string,
+    videoId: string,
+  ) => {
+
+    const video =
+      await prisma.tutorialVideo.findUnique({
+        where: {
+          id: videoId,
+        },
+      });
+
+    if (!video) {
+      throw new Error(
+        "Video tidak ditemukan",
+      );
+    }
+
+    await createActivity(
+      userId,
+      "Menonton Video",
+      `Menonton video ${video.title}`,
+    );
+
+    return {
+      success: true,
+    };
+  };
+  
 // GET DAFTAR PENGRAJIN
 export const getPengrajinService = async () => {
   const pengrajin = await prisma.user.findMany({
@@ -378,6 +415,12 @@ export const createBookingService = async (
       },
     });
 
+  await createActivity(
+    userId,
+    "Booking Pelatihan",
+    `${kelas.namaKelas} pada ${tanggal} jam ${jamPelatihan}`,
+  );
+
   return {
     success: true,
 
@@ -546,6 +589,13 @@ export const createReviewService = async (
     },
   });
 
+  await createActivity(
+    userId,
+    "Memberi Review",
+    `Memberikan rating ${rating} bintang pada kelas ${booking.kelas.namaKelas}`,
+  );
+
+
   return {
     success: true,
     message: "Review berhasil dikirim",
@@ -653,6 +703,13 @@ export const createKeranjangService =
     qty: number,
   ) => {
 
+    const produk =
+      await prisma.produk.findUnique({
+        where: {
+          id: produkId,
+        },
+      });
+
     const check =
       await prisma.keranjang.findFirst({
         where: {
@@ -662,25 +719,43 @@ export const createKeranjangService =
       });
 
     if (check) {
-      return await prisma.keranjang.update({
-        where: {
-          id: check.id,
-        },
-        data: {
-          qty: check.qty + qty,
-        },
-      });
+
+      const result =
+        await prisma.keranjang.update({
+          where: {
+            id: check.id,
+          },
+          data: {
+            qty: check.qty + qty,
+          },
+        });
+
+      await createActivity(
+        userId,
+        "Tambah Keranjang",
+        `Menambahkan ${produk?.namaProduk ?? "produk"} ke keranjang`,
+      );
+
+      return result;
     }
 
-    return await prisma.keranjang.create({
-      data: {
-        userId,
-        produkId,
-        qty,
-      },
-    });
-  };
+    const result =
+      await prisma.keranjang.create({
+        data: {
+          userId,
+          produkId,
+          qty,
+        },
+      });
 
+    await createActivity(
+      userId,
+      "Tambah Keranjang",
+      `Menambahkan ${produk?.namaProduk ?? "produk"} ke keranjang`,
+    );
+
+    return result;
+  };
 //GET KERANJANG
 export const getKeranjangService =
   async (
@@ -723,11 +798,33 @@ export const deleteKeranjangService =
     id: string,
   ) => {
 
+    const keranjang =
+      await prisma.keranjang.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          produk: true,
+        },
+      });
+
+    if (!keranjang) {
+      throw new Error(
+        "Keranjang tidak ditemukan",
+      );
+    }
+
     await prisma.keranjang.delete({
       where: {
         id,
       },
     });
+
+    await createActivity(
+      keranjang.userId,
+      "Hapus Keranjang",
+      `Menghapus ${keranjang.produk.namaProduk} dari keranjang`,
+    );
 
     return true;
   };
@@ -743,6 +840,9 @@ export const updateKeranjangQtyService =
       await prisma.keranjang.findUnique({
         where: {
           id,
+        },
+        include: {
+          produk: true,
         },
       });
 
@@ -762,6 +862,12 @@ export const updateKeranjangQtyService =
           qty,
         },
       });
+
+    await createActivity(
+      keranjang.userId,
+      "Update Keranjang",
+      `Mengubah jumlah ${keranjang.produk.namaProduk} menjadi ${qty}`,
+    );
 
     return {
       success: true,
@@ -872,6 +978,12 @@ export const checkoutKeranjangService =
       },
     });
 
+    await createActivity(
+      userId,
+      "Checkout Produk",
+      `Berhasil checkout pesanan ${orderId} dengan total Rp${totalBayar}`,
+    );
+
     return {
       success: true,
 
@@ -952,6 +1064,12 @@ export const deleteAkunService = async (
       "User tidak ditemukan",
     );
   }
+
+  await createActivity(
+    userId,
+    "Hapus Akun",
+    "Menghapus akun pengguna",
+  );
 
   await prisma.user.delete({
     where: {
