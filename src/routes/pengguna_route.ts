@@ -27,6 +27,12 @@ import {
   logout,
 } from "../controller/pengguna_controller";
 
+import {
+  getKabupaten,
+  getKecamatan,
+  getOngkir,
+} from "../controller/ongkir_controller";
+
 import { authMiddleware } from "../middleware/auth_middleware";
 
 import upload from "../middleware/upload";
@@ -71,6 +77,15 @@ router.get("/sertifikat", authMiddleware, getSertifikat,);
 
 // GET PRODUK
 router.get("/produk", getProduk);
+
+// GET KABUPATEN
+router.get("/kabupaten", getKabupaten);
+
+// GET KECAMATAN
+router.get("/kecamatan/:kabupaten", getKecamatan);
+
+// GET ONGKIR
+router.get("/ongkir/:kecamatan", getOngkir);
 
 //GET DETAIL
 router.get("/produk/:id", getDetailProduk);

@@ -899,12 +899,14 @@ export const checkoutKeranjangService =
       );
     }
 
-    let totalBayar = 0;
+    let subtotal = 0;
 
     keranjang.forEach((item) => {
-      totalBayar +=
-        item.qty * item.produk.harga;
+      subtotal += item.qty * item.produk.harga;
     });
+
+    const totalBayar =
+      subtotal + Number(data.ongkir);
 
     const orderId =
       `ORDER-${Date.now()}`;
@@ -916,28 +918,37 @@ export const checkoutKeranjangService =
       );
 
     const pesanan =
-      await prisma.pesanan.create({
-        data: {
-          userId,
+  await prisma.pesanan.create({
+    data: {
+      userId,
 
-          orderId,
+      orderId,
 
-          namaPenerima:
-            data.namaPenerima,
+      namaPenerima:
+        data.namaPenerima,
 
-          noTelpon:
-            data.noTelpon,
+      noTelpon:
+        data.noTelpon,
 
-          alamat:
-            data.alamat,
+      alamat:
+        data.alamat,
 
-          totalBayar,
+      kabupaten:
+        data.kabupaten,
 
-          metodeBayar:
-            data.metodeBayar,
-        },
-      });
+      kecamatan:
+        data.kecamatan,
 
+      ongkir:
+        Number(data.ongkir),
+
+      totalBayar,
+
+      metodeBayar:
+        data.metodeBayar,
+    },
+  });
+  
     for (const item of keranjang) {
       await prisma.detailPesanan.create({
         data: {

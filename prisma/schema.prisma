@@ -202,7 +202,6 @@ model Produk {
   keranjang Keranjang[]
 }
 
-//PESANAN
 model Pesanan {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -211,8 +210,16 @@ model Pesanan {
   orderId         String   @unique
 
   namaPenerima    String
+
   noTelpon        String
+
   alamat          String
+
+  kabupaten       String
+
+  kecamatan       String
+
+  ongkir          Int
 
   totalBayar      Int
 
@@ -225,6 +232,7 @@ model Pesanan {
   nomorResi       String?
 
   createdAt       DateTime @default(now())
+
   updatedAt       DateTime @updatedAt
 
   user            User @relation(fields: [userId], references: [id])
@@ -300,6 +308,15 @@ model Aktivitas {
   createdAt   DateTime @default(now())
 
   user        User @relation(fields: [userId], references: [id])
+}
+
+model Ongkir {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  kabupaten  String
+  kecamatan  String
+  ongkir     Int
+
+  @@map("ongkir")
 }
 
 
