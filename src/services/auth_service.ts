@@ -16,10 +16,17 @@ const googleClient = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID
 );
 
-//LOGIN GOOGLE
-export const googleLoginService = async (idToken: string) => {
+// LOGIN GOOGLE
+export const googleLoginService = async (
+  idToken: string,
+  role: "pengguna" | "pengrajin" = "pengguna"
+) => {
   console.log("=== GOOGLE LOGIN DEBUG ===");
   console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+
+  if (!["pengguna", "pengrajin"].includes(role)) {
+    throw new Error("Role tidak valid");
+  }
 
   const ticket = await googleClient.verifyIdToken({
     idToken,
@@ -45,7 +52,7 @@ export const googleLoginService = async (idToken: string) => {
         email: payload.email,
         googleId: payload.sub,
         authProvider: "google",
-        role: "pengguna",
+        role: role, // pengguna / pengrajin
       },
     });
   }
@@ -59,7 +66,7 @@ export const googleLoginService = async (idToken: string) => {
   await createActivity(
     user.id,
     "Login Google",
-    "Berhasil masuk menggunakan akun Google",
+    `Berhasil masuk menggunakan akun Google sebagai ${user.role}`,
   );
 
   return {
@@ -78,61 +85,57 @@ export const googleLoginService = async (idToken: string) => {
 
 // REGISTER
 export const registerService = async ({ name, email, password }: any) => {
-  // VALIDASI
   if (!name || !email || !password) {
     throw new Error("Semua field wajib diisi");
   }
 
-  // VALIDASI EMAIL
   if (!email.includes("@")) {
     throw new Error("Format email tidak valid");
   }
 
-  // VALIDASI PASSWORD
   if (password.length < 6) {
     throw new Error("Password minimal 6 karakter");
   }
 
-  // CHECK EMAIL
   const existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (existingUser) {
     throw new Error("Email sudah digunakan");
   }
 
-  // HASH PASSWORD
   const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = generateOTP();
 
-  // CREATE USER
   const user = await prisma.user.create({
     data: {
       name,
       email,
       password: hashedPassword,
       role: "pengguna",
+      otpCode: otp,
+      otpExpired: new Date(Date.now() + 5 * 60 * 1000),
     },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: "Kode OTP Register",
+    text: `Kode OTP Register Anda ${otp}`,
   });
 
   await createActivity(
     user.id,
     "Registrasi",
-    "Berhasil membuat akun baru",
+    "Berhasil membuat akun baru dan mengirim OTP",
   );
 
   return {
     success: true,
-    message: "Register berhasil",
-
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    message: "Register berhasil, OTP dikirim ke email",
+    email: user.email,
   };
 };
 
@@ -238,70 +241,55 @@ export const loginAdminService = async ({ email, password }: any) => {
 
 // LOGIN USER
 export const loginService = async ({ email, password }: any) => {
-  // VALIDASI
   if (!email || !password) {
     throw new Error("Email dan password wajib diisi");
   }
 
-  // CHECK USER
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
     throw new Error("Email atau password salah");
   }
 
-  // CEGAH ADMIN LOGIN USER
   if (user.role === "admin") {
     throw new Error("Gunakan login admin");
   }
 
-  // CHECK PASSWORD NULL
   if (!user.password) {
     throw new Error("Password tidak tersedia");
   }
 
-  // CHECK PASSWORD
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
     throw new Error("Email atau password salah");
   }
 
-  // GENERATE OTP
-  const otp = generateOTP();
-
-  // SIMPAN OTP
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-
-    data: {
-      otpCode: otp,
-
-      otpExpired: new Date(Date.now() + 5 * 60 * 1000),
-    },
+  const token = generateToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
   });
 
-  // KIRIM OTP
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-
-    to: user.email,
-
-    subject: "Kode OTP Login",
-
-    text: `Kode OTP Anda ${otp}`,
-  });
+  await createActivity(
+    user.id,
+    "Login",
+    "Berhasil masuk ke aplikasi",
+  );
 
   return {
     success: true,
-    message: "OTP berhasil dikirim",
-    email: user.email,
+    message: "Login berhasil",
+    token,
+
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
   };
 };
 

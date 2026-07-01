@@ -2,6 +2,62 @@ import bcrypt from "bcryptjs";
 import { io } from "../server";
 import { prisma } from "../lib/prisma";
 
+//GET DASHBOARD SUMMARY
+export const getDashboardSummaryService = async () => {
+  const [totalUser, totalVideo, totalProduk, totalTransaksi] = await Promise.all([
+    prisma.user.count(), // Filter role dihapus agar semua user (admin, pengguna, pengrajin) terhitung
+    prisma.tutorialVideo.count(),
+    prisma.produk.count(),
+    prisma.pesanan.count(),
+  ]);
+
+  return {
+    success: true,
+    data: { totalUser, totalVideo, totalProduk, totalTransaksi },
+  };
+};
+
+//GET BIGDATA SUMMARY 
+export const getBigdataSummaryService = async () => {
+  const [totalPencarianAgg, analyticsResult, googleTrends] = await Promise.all([
+    // Menghitung jumlah total pencarian dari tabel AnalyticsProduct
+    prisma.analyticsProduct.aggregate({
+      _sum: { jumlahDicari: true },
+    }),
+
+    // Top 3 dari hasil analisis Python
+    prisma.analyticsProduct.findMany({
+      orderBy: { ranking: "asc" },
+      take: 3,
+    }),
+
+    // Rata-rata minat per keyword dari Google Trends
+    prisma.bigData.groupBy({
+      by: ["keyword"],
+      _avg: { minatPencarian: true },
+      _max: { minatPencarian: true },
+      orderBy: { _avg: { minatPencarian: "desc" } },
+    }),
+  ]);
+
+  return {
+    success: true,
+    data: {
+      totalPencarian: totalPencarianAgg._sum.jumlahDicari || 0,
+      top3Produk: analyticsResult.map((item) => ({
+        ranking: item.ranking,
+        keyword: item.namaProduk,
+        jumlahDicari: item.jumlahDicari,
+        persentase: item.persentase,
+      })),
+      googleTrends: googleTrends.map((item) => ({
+        keyword: item.keyword,
+        rataMinat: parseFloat((item._avg.minatPencarian ?? 0).toFixed(1)),
+        maxMinat: item._max.minatPencarian ?? 0,
+      })),
+    },
+  };
+};
 // GET USERS PROFILE
 export const getUsersProfileService = async () => {
   const users = await prisma.user.findMany({
@@ -280,10 +336,10 @@ export const updatePengrajinService = async (id: string, data: any) => {
 
 // DELETE PENGRAJIN
 export const deletePengrajinService = async (id: string) => {
-  // CHECK PENGRAJIN
   const checkPengrajin = await prisma.user.findUnique({
-    where: {
-      id,
+    where: { id },
+    include: {
+      pengrajinProfile: true,
     },
   });
 
@@ -291,20 +347,35 @@ export const deletePengrajinService = async (id: string) => {
     throw new Error("Pengrajin tidak ditemukan");
   }
 
-  // DELETE
-  const pengrajin = await prisma.user.delete({
-    where: {
-      id,
-    },
+  if (checkPengrajin.role !== "pengrajin") {
+    throw new Error("User ini bukan pengrajin");
+  }
+
+  const pengrajin = await prisma.$transaction(async (tx) => {
+    await tx.pengrajinProfile.deleteMany({
+      where: {
+        userId: id,
+      },
+    });
+
+    return await tx.user.delete({
+      where: {
+        id,
+      },
+    });
   });
 
   return {
-    id: pengrajin.id,
-    photo: pengrajin.photo,
-    name: pengrajin.name,
-    email: pengrajin.email,
-    role: pengrajin.role,
-    createdAt: pengrajin.createdAt,
+    success: true,
+    message: "Pengrajin berhasil dihapus",
+    data: {
+      id: pengrajin.id,
+      photo: pengrajin.photo,
+      name: pengrajin.name,
+      email: pengrajin.email,
+      role: pengrajin.role,
+      createdAt: pengrajin.createdAt,
+    },
   };
 };
 
@@ -649,6 +720,47 @@ export const kirimPesananService = async (
         `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
     },
   );
+
+  return {
+    success: true,
+    data: pesanan,
+  };
+};
+
+export const updateStatusPesananService = async (
+  pesananId: string,
+  statusPesanan: string,
+) => {
+  const validStatus = ["diproses", "diterima", "dikemas", "dikirim", "selesai"];
+
+  if (!validStatus.includes(statusPesanan)) {
+    throw new Error("Status pesanan tidak valid");
+  }
+
+  const pesanan = await prisma.pesanan.update({
+    where: {
+      id: pesananId,
+    },
+
+    data: {
+      statusPesanan,
+    },
+  });
+
+  await prisma.notifikasi.create({
+    data: {
+      userId: pesanan.userId,
+
+      judul: "Status Pesanan Diperbarui",
+
+      pesan: `Pesanan ${pesanan.orderId} sekarang berstatus "${statusPesanan}".`,
+    },
+  });
+
+  io.emit("notifikasi", {
+    judul: "Status Pesanan Diperbarui",
+    pesan: `Pesanan ${pesanan.orderId} sekarang berstatus "${statusPesanan}".`,
+  });
 
   return {
     success: true,

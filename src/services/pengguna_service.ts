@@ -155,7 +155,7 @@ export const createAktivitasVideoService =
       success: true,
     };
   };
-  
+
 // GET DAFTAR PENGRAJIN
 export const getPengrajinService = async () => {
   const pengrajin = await prisma.user.findMany({
@@ -206,6 +206,7 @@ export const getPengrajinService = async () => {
     pengrajin: result,
   };
 };
+
 // CREATE KELAS
 export const createKelasService = async (data: any) => {
   const { namaKelas, deskripsi, harga, durasi, lokasi } = data;
@@ -359,7 +360,7 @@ export const createBookingService = async (
   console.log("userId =", userId);
   console.log("pengrajinId =", pengrajinId);
   console.log("kelasId =", kelasId);
-  console.log("namaLengkap =", namaLengkap);  
+  console.log("namaLengkap =", namaLengkap);
 
   const booking =
     await prisma.pelatihanBooking.create({
@@ -437,7 +438,10 @@ export const createBookingService = async (
 };
 
 // GET RIWAYAT BOOKING
-export const getRiwayatBookingService = async (userId: string) => {
+export const getRiwayatBookingService = async (
+  userId: string,
+) => {
+
   const bookings = await prisma.pelatihanBooking.findMany({
     where: {
       userId,
@@ -445,6 +449,7 @@ export const getRiwayatBookingService = async (userId: string) => {
 
     include: {
       kelas: true,
+
       pengrajin: {
         select: {
           id: true,
@@ -461,27 +466,45 @@ export const getRiwayatBookingService = async (userId: string) => {
 
   const result = bookings.map((item) => ({
     id: item.id,
+
     orderId: item.orderId,
+
     namaKelas: item.kelas.namaKelas,
+
     thumbnail: item.kelas.thumbnail,
-    pengrajin: item.pengrajin.name,
+
+    pengrajinId: item.pengrajin.id,
+
+    pengrajinNama: item.pengrajin.name,
+
+    pengrajinPhoto: item.pengrajin.photo
+      ? `/uploads/${item.pengrajin.photo}`
+      : null,
+
     tanggal: item.tanggal,
+
     jamPelatihan: item.jamPelatihan,
+
     lokasi: item.lokasi,
+
     totalBayar: item.totalBayar,
+
     metodeBayar: item.metodeBayar,
+
     statusBayar: item.statusBayar,
+
+    statusKelas: item.statusKelas,
+
+    sudahReview: item.sudahReview,
+
     createdAt: item.createdAt,
   }));
 
-  console.log("RIWAYAT BOOKING:");
-  console.log(JSON.stringify(result, null, 2));
   return {
     success: true,
     bookings: result,
   };
 };
-
 // GET JADWAL KELAS
 export const getJadwalKelasService = async (userId: string) => {
   await updateStatusOtomatis();
@@ -503,9 +526,21 @@ export const getJadwalKelasService = async (userId: string) => {
     },
   });
 
+  const result = jadwal.map((item) => ({
+    ...item,
+
+    pengrajin: {
+      ...item.pengrajin,
+
+      photo: item.pengrajin?.photo
+        ? `/uploads/${item.pengrajin.photo}`
+        : null,
+    },
+  }));
+
   return {
     success: true,
-    jadwal,
+    jadwal: result,
   };
 };
 
@@ -534,7 +569,6 @@ const updateStatusOtomatis = async () => {
     }
   }
 };
-
 
 // CREATE REVIEW
 export const createReviewService = async (
@@ -756,6 +790,7 @@ export const createKeranjangService =
 
     return result;
   };
+
 //GET KERANJANG
 export const getKeranjangService =
   async (
@@ -876,139 +911,178 @@ export const updateKeranjangQtyService =
   };
 
 //CHECKOUT
-export const checkoutKeranjangService =
-  async (
-    userId: string,
-    data: any,
-  ) => {
+export const checkoutKeranjangService = async (
+  userId: string,
+  data: any,
+) => {
+  const keranjang = await prisma.keranjang.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      produk: true,
+    },
+  });
 
-    const keranjang =
-      await prisma.keranjang.findMany({
-        where: {
-          userId,
-        },
+  if (keranjang.length === 0) {
+    throw new Error("Keranjang kosong");
+  }
 
-        include: {
-          produk: true,
-        },
-      });
+  let subtotal = 0;
 
-    if (keranjang.length === 0) {
-      throw new Error(
-        "Keranjang kosong",
-      );
-    }
+  keranjang.forEach((item) => {
+    subtotal += item.qty * item.produk.harga;
+  });
 
-    let subtotal = 0;
+  const dataOngkir = await prisma.ongkir.findFirst({
+    where: {
+      kabupaten: data.kabupaten,
+      kecamatan: data.kecamatan,
+    },
+  });
 
-    keranjang.forEach((item) => {
-      subtotal += item.qty * item.produk.harga;
-    });
+  if (!dataOngkir) {
+    throw new Error("Ongkir tidak ditemukan");
+  }
 
-    const totalBayar =
-      subtotal + Number(data.ongkir);
+  const totalBayar = subtotal + dataOngkir.ongkir;
 
-    const orderId =
-      `ORDER-${Date.now()}`;
+  const orderId = `ORDER-${Date.now()}`;
 
-    const payment =
-      await createTransactionService(
-        orderId,
-        totalBayar,
-      );
+  const payment = await createTransactionService(
+    orderId,
+    totalBayar,
+  );
 
-    const pesanan =
-  await prisma.pesanan.create({
+  const pesanan = await prisma.pesanan.create({
     data: {
       userId,
 
       orderId,
 
-      namaPenerima:
-        data.namaPenerima,
+      namaPenerima: data.namaPenerima,
 
-      noTelpon:
-        data.noTelpon,
+      noTelpon: data.noTelpon,
 
-      alamat:
-        data.alamat,
+      alamat: data.alamat,
 
-      kabupaten:
-        data.kabupaten,
+      kabupaten: data.kabupaten,
 
-      kecamatan:
-        data.kecamatan,
+      kecamatan: data.kecamatan,
 
-      ongkir:
-        Number(data.ongkir),
+      ongkir: dataOngkir.ongkir,
 
       totalBayar,
 
-      metodeBayar:
-        data.metodeBayar,
+      metodeBayar: data.metodeBayar,
+
+      statusBayar: "menunggu",
+
+      statusPesanan: "diproses",
     },
   });
-  
-    for (const item of keranjang) {
-      await prisma.detailPesanan.create({
-        data: {
-          pesananId: pesanan.id,
 
-          produkId:
-            item.produkId,
+  for (const item of keranjang) {
+    await prisma.detailPesanan.create({
+      data: {
+        pesananId: pesanan.id,
 
-          qty:
-            item.qty,
+        produkId: item.produkId,
 
-          harga:
-            item.produk.harga,
+        qty: item.qty,
 
-          subtotal:
-            item.qty *
-            item.produk.harga,
-        },
-      });
+        harga: item.produk.harga,
 
-      await prisma.produk.update({
-        where: {
-          id: item.produkId,
-        },
-
-        data: {
-          stok: {
-            decrement:
-              item.qty,
-          },
-        },
-      });
-    }
-
-    await prisma.keranjang.deleteMany({
-      where: {
-        userId,
+        subtotal: item.qty * item.produk.harga,
       },
     });
 
-    await createActivity(
-      userId,
-      "Checkout Produk",
-      `Berhasil checkout pesanan ${orderId} dengan total Rp${totalBayar}`,
-    );
-
-    return {
-      success: true,
-
-      payment: {
-        token:
-          payment.token,
-
-        redirect_url:
-          payment.redirect_url,
+    await prisma.produk.update({
+      where: {
+        id: item.produkId,
       },
+      data: {
+        stok: {
+          decrement: item.qty,
+        },
+      },
+    });
+  }
 
-      pesanan,
-    };
+  await prisma.keranjang.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  await createActivity(
+    userId,
+    "Checkout Produk",
+    `Berhasil checkout pesanan ${orderId} dengan total Rp${totalBayar}`,
+  );
+
+  return {
+    success: true,
+
+    payment: {
+      token: payment.token,
+      redirect_url: payment.redirect_url,
+    },
+
+    pesanan,
   };
+};
+
+//GET KABUPATEN
+export const getKabupatenService = async () => {
+  const data = await prisma.ongkir.findMany({
+    orderBy: {
+      kabupaten: "asc",
+    },
+  });
+
+  const kabupaten = [...new Set(data.map((item) => item.kabupaten))];
+
+  return {
+    success: true,
+    kabupaten,
+  };
+};
+
+//GET KECAMATAN
+export const getKecamatanService = async (kabupaten: string) => {
+  const data = await prisma.ongkir.findMany({
+    where: {
+      kabupaten,
+    },
+    orderBy: {
+      kecamatan: "asc",
+    },
+  });
+
+  return {
+    success: true,
+    kecamatan: data.map((item) => item.kecamatan),
+  };
+};
+
+//GET ONGKIR
+export const getOngkirService = async (kecamatan: string) => {
+  const ongkir = await prisma.ongkir.findFirst({
+    where: {
+      kecamatan,
+    },
+  });
+
+  if (!ongkir) {
+    throw new Error("Ongkir tidak ditemukan");
+  }
+
+  return {
+    success: true,
+    ongkir,
+  };
+};
 
 //RIWAYAT PEMBELIAN
 export const getRiwayatPembelianService =
@@ -1033,9 +1107,25 @@ export const getRiwayatPembelianService =
         },
       });
 
+    const result = pesanan.map((item) => ({
+      ...item,
+
+      detailPesanan: item.detailPesanan.map((detail) => ({
+        ...detail,
+
+        produk: {
+          ...detail.produk,
+
+          foto: detail.produk?.foto
+            ? `/uploads/${detail.produk.foto}`
+            : null,
+        },
+      })),
+    }));
+
     return {
       success: true,
-      pesanan,
+      pesanan: result,
     };
   };
 
@@ -1064,6 +1154,7 @@ export const getNotifikasiService =
 export const deleteAkunService = async (
   userId: string,
 ) => {
+
   const user = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -1071,17 +1162,89 @@ export const deleteAkunService = async (
   });
 
   if (!user) {
-    throw new Error(
-      "User tidak ditemukan",
-    );
+    throw new Error("User tidak ditemukan");
   }
 
-  await createActivity(
-    userId,
-    "Hapus Akun",
-    "Menghapus akun pengguna",
-  );
+  // Ambil seluruh pesanan
+  const pesanan = await prisma.pesanan.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      id: true,
+    },
+  });
 
+  const pesananIds = pesanan.map((item) => item.id);
+
+  // Hapus detail pesanan
+  if (pesananIds.length > 0) {
+    await prisma.detailPesanan.deleteMany({
+      where: {
+        pesananId: {
+          in: pesananIds,
+        },
+      },
+    });
+  }
+
+  // Hapus pesanan
+  await prisma.pesanan.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus keranjang
+  await prisma.keranjang.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus booking
+  await prisma.pelatihanBooking.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus review sebagai user
+  await prisma.review.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus review sebagai pengrajin
+  await prisma.review.deleteMany({
+    where: {
+      pengrajinId: userId,
+    },
+  });
+
+  // Hapus notifikasi
+  await prisma.notifikasi.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus aktivitas
+  await prisma.aktivitas.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Hapus profil pengrajin jika ada
+  await prisma.pengrajinProfile.deleteMany({
+    where: {
+      userId,
+    },
+  });
+
+  // Terakhir hapus user
   await prisma.user.delete({
     where: {
       id: userId,
@@ -1108,6 +1271,20 @@ export const getAktivitasService = async (
   });
 };
 
+export const getTopProdukDicariService = async () => {
+  const data = await prisma.analyticsProduct.findMany({
+    orderBy: {
+      ranking: "asc",
+    },
+    take: 3,
+  });
+
+  return {
+    success: true,
+    top3Produk: data,
+  };
+};
+
 //LOGOUT
 export const logoutService = async (
   userId: string,
@@ -1123,3 +1300,4 @@ export const logoutService = async (
     message: "Logout berhasil",
   };
 };
+

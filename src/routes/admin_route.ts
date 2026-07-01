@@ -21,6 +21,9 @@ import {
   deleteProduk,
   getPesananAdmin,
   kirimPesanan,
+  getDashboardSummary,
+  getBigdataSummary,
+  updateStatusPesanan,
 } from "../controller/admin_controller";
 
 const router = Router();
@@ -95,5 +98,12 @@ router.get("/pesanan", getPesananAdmin,);
 
 //kIRIM PESANAN
 router.put("/pesanan/:pesananId/kirim", kirimPesanan,);
+
+//UPDATE STATUS PESANAN
+router.put("/pesanan/:pesananId/status", updateStatusPesanan);
+
+//DASHBOARD
+router.get("/dashboard/summary", getDashboardSummary);
+router.get("/dashboard/bigdata", getBigdataSummary);
 
 export default router;

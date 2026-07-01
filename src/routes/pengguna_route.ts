@@ -25,13 +25,13 @@ import {
   getAktivitas,
   createAktivitasVideo,
   logout,
-} from "../controller/pengguna_controller";
-
-import {
   getKabupaten,
   getKecamatan,
   getOngkir,
-} from "../controller/ongkir_controller";
+  getTopProdukDicariController,
+
+} from "../controller/pengguna_controller";
+
 
 import { authMiddleware } from "../middleware/auth_middleware";
 
@@ -61,7 +61,7 @@ router.get("/kelas", authMiddleware, getKelas);
 router.post("/kelas", createKelas);
 
 // CREATE BOOKING
-router.post("/booking", createBooking);
+router.post("/booking",authMiddleware, createBooking);
 
 // GET RIWAYAT BOOKING
 router.get("/riwayat-booking", authMiddleware, getRiwayatBooking);
@@ -78,14 +78,12 @@ router.get("/sertifikat", authMiddleware, getSertifikat,);
 // GET PRODUK
 router.get("/produk", getProduk);
 
-// GET KABUPATEN
-router.get("/kabupaten", getKabupaten);
-
-// GET KECAMATAN
-router.get("/kecamatan/:kabupaten", getKecamatan);
-
-// GET ONGKIR
-router.get("/ongkir/:kecamatan", getOngkir);
+// GET TOP PRODUK
+router.get(
+  "/produk/top",
+  authMiddleware,
+  getTopProdukDicariController
+);
 
 //GET DETAIL
 router.get("/produk/:id", getDetailProduk);
@@ -116,6 +114,12 @@ router.delete("/delete-account",authMiddleware,deleteAkun,);
 
 //LOG AKTIVITAS
 router.get("/aktivitas",authMiddleware,getAktivitas,);
+
+router.get("/kabupaten",authMiddleware, getKabupaten);
+
+router.get("/kecamatan/:kabupaten", authMiddleware ,getKecamatan);
+
+router.get("/ongkir/:kecamatan", authMiddleware, getOngkir);
 
 router.post("/logout",authMiddleware,logout,);
 

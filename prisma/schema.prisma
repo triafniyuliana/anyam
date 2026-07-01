@@ -202,6 +202,54 @@ model Produk {
   keranjang Keranjang[]
 }
 
+model BigData {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  tanggal         DateTime @map("Tanggal")
+
+  keyword         String   @map("Keyword")
+
+  kategori        String   @map("Kategori")
+
+  minatPencarian  Int      @map("Minat_Pencarian")
+
+  region          String   @map("Region")
+
+  sumber          String   @map("Sumber")
+
+  waktuAmbil      String?  @map("Waktu_Ambil")
+
+  @@map("Big_Data")
+}
+
+model PopularKeyword {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  keyword      String
+
+  jumlahCari   Int      @default(1)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// HASIL analisis Python (diisi GitHub Actions)
+model AnalyticsProduct {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  ranking       Int
+  produkId      String?
+  namaProduk    String
+  kategori      String?
+  jumlahDicari  Int
+  persentase    Float
+
+  generatedAt   DateTime @default(now())
+
+  @@map("analytics_products")
+}
+
+//PESANAN
 model Pesanan {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -318,5 +366,3 @@ model Ongkir {
 
   @@map("ongkir")
 }
-
-

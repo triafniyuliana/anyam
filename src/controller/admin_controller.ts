@@ -19,7 +19,30 @@ import {
   deleteProdukService,
   kirimPesananService,
   getPesananAdminService,
+  getDashboardSummaryService,
+  getBigdataSummaryService,
+  updateStatusPesananService,
 } from "../services/admin_service";
+
+// DASHBOARD SUMMARY 
+export const getDashboardSummary = async (req: Request, res: Response) => {
+  try {
+    const result = await getDashboardSummaryService();
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// BIGDATA SUMMARY
+export const getBigdataSummary = async (req: Request, res: Response) => {
+  try {
+    const result = await getBigdataSummaryService();
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // GET PROFILE USERS
 export const getUsersProfile = async (req: Request, res: Response) => {
@@ -245,7 +268,7 @@ export const createTutorialVideo =
       const files =
         req.files as {
           [fieldname: string]:
-            Express.Multer.File[];
+          Express.Multer.File[];
         };
 
       const thumbnail =
@@ -288,7 +311,7 @@ export const createTutorialVideo =
       });
     }
   };
-  
+
 // UPDATE VIDEO
 export const updateTutorialVideo =
   async (
@@ -554,6 +577,22 @@ export const kirimPesanan = async (
   } catch (error: any) {
 
     return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateStatusPesanan = async (req: any, res: any) => {
+  try {
+    const { pesananId } = req.params;
+    const { statusPesanan } = req.body;
+
+    const result = await updateStatusPesananService(pesananId, statusPesanan);
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({
       success: false,
       message: error.message,
     });

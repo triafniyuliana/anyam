@@ -13,15 +13,14 @@ import {
 } from "../services/auth_service";
 
 //LOGIN GOOGLE
-export const googleLogin = async (
-  req: any,
-  res: any
-) => {
+// LOGIN GOOGLE
+export const googleLogin = async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, role } = req.body;
 
     const result = await googleLoginService(
-      idToken
+      idToken,
+      role
     );
 
     return res.status(200).json(result);
@@ -32,7 +31,6 @@ export const googleLogin = async (
     });
   }
 };
-
 // REGISTER
 export const register = async (req: Request, res: Response) => {
   try {
@@ -122,9 +120,9 @@ export const resendOtp = async (
   try {
 
     const result =
-        await resendOtpService(
-      req.body,
-    );
+      await resendOtpService(
+        req.body,
+      );
 
     return res.status(200).json(result);
 

@@ -26,6 +26,10 @@ import {
   getAktivitasService,
   logoutService,
   createAktivitasVideoService,
+  getKabupatenService,
+  getKecamatanService,
+  getOngkirService,
+  getTopProdukDicariService
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -402,6 +406,61 @@ export const checkoutKeranjang = async (
   }
 };
 
+//GET KABUPATEN
+export const getKabupaten = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getKabupatenService();
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//GET KECAMATAN
+export const getKecamatan = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const kabupaten = req.params.kabupaten as string;
+
+    const result = await getKecamatanService(kabupaten);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//GET ONGKIR
+export const getOngkir = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const kecamatan = req.params.kecamatan as string;
+
+    const result = await getOngkirService(kecamatan);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 //GET RIWAYAT PEMBELIAN
 export const getRiwayatPembelian = async (
   req: any,
@@ -495,6 +554,22 @@ export const getAktivitas = async (
   }
 };
 
+export const getTopProdukDicariController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const result = await getTopProdukDicariService();
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 //LOGOUT
 export const logout = async (
   req: any,
@@ -514,3 +589,4 @@ export const logout = async (
     });
   }
 };
+
