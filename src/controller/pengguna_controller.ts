@@ -1,5 +1,8 @@
-import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+import {
+  Request,
+  Response,
+  NextFunction,
+} from "express";import { prisma } from "../lib/prisma";
 
 import {
   getProfileService,
@@ -29,7 +32,8 @@ import {
   getKabupatenService,
   getKecamatanService,
   getOngkirService,
-  getTopProdukDicariService
+  getTopProdukDicariService,
+  getTopViewProdukService,
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -74,6 +78,28 @@ export const getTutorialVideos = async (req: Request, res: Response) => {
       message: error.message,
     });
   }
+};
+
+// GET TOP PRODUK PALING BANYAK DILIHAT
+export const getTopViewProduk = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+
+  try {
+
+    const result =
+      await getTopViewProdukService();
+
+    res.status(200).json(result);
+
+  } catch (error) {
+
+    next(error);
+
+  }
+
 };
 
 //LOG VIDEO

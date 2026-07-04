@@ -701,33 +701,46 @@ export const getProdukUserService =
     };
   };
 
-//GET DETAIL PRODUK
-export const getDetailProdukUserService =
-  async (id: string) => {
+// GET DETAIL PRODUK
+export const getDetailProdukUserService = async (
+  id: string,
+) => {
 
-    const produk =
-      await prisma.produk.findUnique({
-        where: {
-          id,
-        },
-      });
+  console.log("MASUK DETAIL PRODUK:", id);
 
-    if (!produk) {
-      throw new Error(
-        "Produk tidak ditemukan"
-      );
-    }
+  const produk = await prisma.produk.findUnique({
+    where: {
+      id,
+    },
+  });
 
-    return {
-      success: true,
-      produk: {
-        ...produk,
-        foto: produk.foto
-          ? `/uploads/${produk.foto}`
-          : null,
+  if (!produk) {
+    throw new Error("Produk tidak ditemukan");
+  }
+
+  await prisma.produk.update({
+    where: {
+      id,
+    },
+    data: {
+      viewCount: {
+        increment: 1,
       },
-    };
+    },
+  });
+
+  console.log("VIEWCOUNT DITAMBAH");
+
+  return {
+    success: true,
+    produk: {
+      ...produk,
+      foto: produk.foto
+        ? `/uploads/${produk.foto}`
+        : null,
+    },
   };
+};
 
 //TAMBAH KERANJANG
 export const createKeranjangService =
@@ -1316,6 +1329,27 @@ export const getTopProdukDicariService = async () => {
   return {
     success: true,
     top3Produk: result,
+  };
+};
+
+// GET TOP PRODUK PALING BANYAK DILIHAT
+export const getTopViewProdukService = async () => {
+
+  const produk = await prisma.produk.findMany({
+    orderBy: {
+      viewCount: "desc",
+    },
+    take: 3,
+  });
+
+  return {
+    success: true,
+    produk: produk.map((item) => ({
+      ...item,
+      foto: item.foto
+        ? `/uploads/${item.foto}`
+        : null,
+    })),
   };
 };
 

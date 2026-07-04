@@ -29,6 +29,7 @@ import {
   getKecamatan,
   getOngkir,
   getTopProdukDicariController,
+  getTopViewProduk,
 
 } from "../controller/pengguna_controller";
 
@@ -77,6 +78,8 @@ router.get("/sertifikat", authMiddleware, getSertifikat,);
 
 // GET PRODUK
 router.get("/produk", getProduk);
+
+router.get("/produk/top-view", getTopViewProduk);
 
 // GET TOP PRODUK
 router.get(
