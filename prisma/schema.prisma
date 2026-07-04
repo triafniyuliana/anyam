@@ -180,26 +180,33 @@ model PelatihanBooking {
 
 //PRODUK
 model Produk {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  namaProduk  String
-  deskripsi   String
-  harga       Int
-  stok        Int
+  namaProduk    String
 
-  foto        String?
+  keywordTrend  String?
 
-  kategori    String
+  deskripsi     String
 
-  ukuran      String?
-  bahan       String?
+  harga         Int
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  stok          Int
+
+  foto          String?
+
+  kategori      String
+
+  ukuran        String?
+
+  bahan         String?
+
+  createdAt     DateTime @default(now())
+
+  updatedAt     DateTime @updatedAt
 
   detailPesanan DetailPesanan[]
 
-  keranjang Keranjang[]
+  keranjang     Keranjang[]
 }
 
 model BigData {
@@ -235,16 +242,22 @@ model PopularKeyword {
 
 // HASIL analisis Python (diisi GitHub Actions)
 model AnalyticsProduct {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  ranking       Int
-  produkId      String?
-  namaProduk    String
-  kategori      String?
-  jumlahDicari  Int
-  persentase    Float
+  ranking         Int
+  produkId        String?
+  namaProduk      String
+  kategori        String?
+  jumlahDicari    Int
+  persentase      Float
 
-  generatedAt   DateTime @default(now())
+  rataMinatTrends Float?
+  maxMinatTrends  Int?
+  totalData       Int?
+  tanggalTerakhir DateTime?
+  sumber          String?
+
+  generatedAt     DateTime @default(now())
 
   @@map("analytics_products")
 }

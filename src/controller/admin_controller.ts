@@ -428,6 +428,8 @@ export const createProduk = async (
     const data = {
       namaProduk: req.body.namaProduk,
 
+      keywordTrend: req.body.keywordTrend,
+
       deskripsi: req.body.deskripsi,
 
       harga: Number(req.body.harga),
@@ -445,13 +447,11 @@ export const createProduk = async (
         : null,
     };
 
-    const result =
-      await createProdukService(data);
+    const result = await createProdukService(data);
 
     return res.status(201).json({
       success: true,
-      message:
-        "Produk berhasil ditambahkan",
+      message: "Produk berhasil ditambahkan",
       data: result,
     });
   } catch (error: any) {
@@ -473,6 +473,8 @@ export const updateProduk = async (
     const data = {
       namaProduk: req.body.namaProduk,
 
+      keywordTrend: req.body.keywordTrend,
+
       deskripsi: req.body.deskripsi,
 
       harga: Number(req.body.harga),
@@ -490,16 +492,11 @@ export const updateProduk = async (
         : undefined,
     };
 
-    const result =
-      await updateProdukService(
-        id,
-        data,
-      );
+    const result = await updateProdukService(id, data);
 
     return res.status(200).json({
       success: true,
-      message:
-        "Produk berhasil diupdate",
+      message: "Produk berhasil diupdate",
       data: result,
     });
   } catch (error: any) {

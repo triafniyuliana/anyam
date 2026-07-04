@@ -17,47 +17,44 @@ export const getDashboardSummaryService = async () => {
   };
 };
 
-//GET BIGDATA SUMMARY 
+// GET BIGDATA SUMMARY
 export const getBigdataSummaryService = async () => {
-  const [totalPencarianAgg, analyticsResult, googleTrends] = await Promise.all([
-    // Menghitung jumlah total pencarian dari tabel AnalyticsProduct
-    prisma.analyticsProduct.aggregate({
-      _sum: { jumlahDicari: true },
-    }),
+  const analytics = await prisma.analyticsProduct.findMany({
+    orderBy: {
+      ranking: "asc",
+    },
+  });
 
-    // Top 3 dari hasil analisis Python
-    prisma.analyticsProduct.findMany({
-      orderBy: { ranking: "asc" },
-      take: 3,
-    }),
-
-    // Rata-rata minat per keyword dari Google Trends
-    prisma.bigData.groupBy({
-      by: ["keyword"],
-      _avg: { minatPencarian: true },
-      _max: { minatPencarian: true },
-      orderBy: { _avg: { minatPencarian: "desc" } },
-    }),
-  ]);
+  const totalPencarian = analytics.reduce(
+    (total, item) => total + item.jumlahDicari,
+    0,
+  );
 
   return {
     success: true,
     data: {
-      totalPencarian: totalPencarianAgg._sum.jumlahDicari || 0,
-      top3Produk: analyticsResult.map((item) => ({
+      totalPencarian,
+
+      top3Produk: analytics.slice(0, 3).map((item) => ({
         ranking: item.ranking,
         keyword: item.namaProduk,
+        kategori: item.kategori,
         jumlahDicari: item.jumlahDicari,
         persentase: item.persentase,
+        rataMinatTrends: item.rataMinatTrends,
+        maxMinatTrends: item.maxMinatTrends,
       })),
-      googleTrends: googleTrends.map((item) => ({
-        keyword: item.keyword,
-        rataMinat: parseFloat((item._avg.minatPencarian ?? 0).toFixed(1)),
-        maxMinat: item._max.minatPencarian ?? 0,
+
+      googleTrends: analytics.map((item) => ({
+        keyword: item.namaProduk,
+        jumlahDicari: item.jumlahDicari,
+        rataMinat: item.rataMinatTrends ?? 0,
+        maxMinat: item.maxMinatTrends ?? 0,
       })),
     },
   };
 };
+
 // GET USERS PROFILE
 export const getUsersProfileService = async () => {
   const users = await prisma.user.findMany({
@@ -335,6 +332,7 @@ export const updatePengrajinService = async (id: string, data: any) => {
 };
 
 // DELETE PENGRAJIN
+// DELETE PENGRAJIN
 export const deletePengrajinService = async (id: string) => {
   const checkPengrajin = await prisma.user.findUnique({
     where: { id },
@@ -352,6 +350,24 @@ export const deletePengrajinService = async (id: string) => {
   }
 
   const pengrajin = await prisma.$transaction(async (tx) => {
+    await tx.review.deleteMany({
+      where: {
+        pengrajinId: id,
+      },
+    });
+
+    await tx.pelatihanBooking.deleteMany({
+      where: {
+        pengrajinId: id,
+      },
+    });
+
+    await tx.notifikasi.deleteMany({
+      where: {
+        userId: id,
+      },
+    });
+
     await tx.pengrajinProfile.deleteMany({
       where: {
         userId: id,
@@ -541,12 +557,12 @@ export const getDetailProdukService = async (
 
   return produk;
 };
-//CREATE PRODUK
-export const createProdukService = async (
-  data: any
-) => {
+
+// CREATE PRODUK
+export const createProdukService = async (data: any) => {
   const {
     namaProduk,
+    keywordTrend,
     deskripsi,
     harga,
     stok,
@@ -558,19 +574,19 @@ export const createProdukService = async (
 
   if (
     !namaProduk ||
+    !keywordTrend ||
     !deskripsi ||
     !harga ||
     !stok ||
     !kategori
   ) {
-    throw new Error(
-      "Semua field wajib diisi"
-    );
+    throw new Error("Semua field wajib diisi");
   }
 
   return await prisma.produk.create({
     data: {
       namaProduk,
+      keywordTrend: keywordTrend.toLowerCase().trim(),
       deskripsi,
       harga: Number(harga),
       stok: Number(stok),
@@ -581,26 +597,22 @@ export const createProdukService = async (
     },
   });
 };
-//UPDATE PRODUK
-export const updateProdukService = async (
-  id: string,
-  data: any
-) => {
-  const produk =
-    await prisma.produk.findUnique({
-      where: {
-        id,
-      },
-    });
+
+// UPDATE PRODUK
+export const updateProdukService = async (id: string, data: any) => {
+  const produk = await prisma.produk.findUnique({
+    where: {
+      id,
+    },
+  });
 
   if (!produk) {
-    throw new Error(
-      "Produk tidak ditemukan"
-    );
+    throw new Error("Produk tidak ditemukan");
   }
 
   const {
     namaProduk,
+    keywordTrend,
     deskripsi,
     harga,
     stok,
@@ -617,6 +629,9 @@ export const updateProdukService = async (
 
     data: {
       namaProduk,
+      keywordTrend: keywordTrend
+        ? keywordTrend.toLowerCase().trim()
+        : produk.keywordTrend,
       deskripsi,
       harga: Number(harga),
       stok: Number(stok),
@@ -624,9 +639,7 @@ export const updateProdukService = async (
       ukuran,
       bahan,
 
-      foto:
-        foto ??
-        produk.foto,
+      foto: foto ?? produk.foto,
     },
   });
 };

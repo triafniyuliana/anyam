@@ -1279,9 +1279,43 @@ export const getTopProdukDicariService = async () => {
     take: 3,
   });
 
+  const result = await Promise.all(
+    data.map(async (item) => {
+      let produk = null;
+
+      if (item.produkId) {
+        produk = await prisma.produk.findUnique({
+          where: {
+            id: item.produkId,
+          },
+        });
+      }
+
+      return {
+        id: item.id,
+        ranking: item.ranking,
+        produkId: item.produkId,
+        namaProduk: item.namaProduk,
+        keyword: item.namaProduk,
+        kategori: item.kategori,
+        jumlahDicari: item.jumlahDicari,
+        persentase: item.persentase,
+        rataMinatTrends: item.rataMinatTrends,
+        maxMinatTrends: item.maxMinatTrends,
+
+        produk: produk
+          ? {
+            ...produk,
+            foto: produk.foto ? `/uploads/${produk.foto}` : null,
+          }
+          : null,
+      };
+    }),
+  );
+
   return {
     success: true,
-    top3Produk: data,
+    top3Produk: result,
   };
 };
 
