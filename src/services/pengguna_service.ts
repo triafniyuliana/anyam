@@ -1046,6 +1046,92 @@ export const checkoutKeranjangService = async (
   };
 };
 
+//CHECKOUT LANGSUNG (BELI SEKARANG - tanpa keranjang)
+export const checkoutLangsungService = async (
+  userId: string,
+  produkId: string,
+  qty: number,
+  data: any,
+) => {
+  const produk = await prisma.produk.findUnique({
+    where: { id: produkId },
+  });
+
+  if (!produk) {
+    throw new Error("Produk tidak ditemukan");
+  }
+
+  if (produk.stok < qty) {
+    throw new Error("Stok tidak mencukupi");
+  }
+
+  const subtotal = qty * produk.harga;
+
+  const dataOngkir = await prisma.ongkir.findFirst({
+    where: {
+      kabupaten: data.kabupaten,
+      kecamatan: data.kecamatan,
+    },
+  });
+
+  if (!dataOngkir) {
+    throw new Error("Ongkir tidak ditemukan");
+  }
+
+  const totalBayar = subtotal + dataOngkir.ongkir;
+
+  const orderId = `ORDER-${Date.now()}`;
+
+  const payment = await createTransactionService(orderId, totalBayar);
+
+  const pesanan = await prisma.pesanan.create({
+    data: {
+      userId,
+      orderId,
+      namaPenerima: data.namaPenerima,
+      noTelpon: data.noTelpon,
+      alamat: data.alamat,
+      kabupaten: data.kabupaten,
+      kecamatan: data.kecamatan,
+      ongkir: dataOngkir.ongkir,
+      totalBayar,
+      metodeBayar: data.metodeBayar,
+      statusBayar: "menunggu",
+      statusPesanan: "diproses",
+    },
+  });
+
+  await prisma.detailPesanan.create({
+    data: {
+      pesananId: pesanan.id,
+      produkId: produk.id,
+      qty,
+      harga: produk.harga,
+      subtotal,
+    },
+  });
+
+  await prisma.produk.update({
+    where: { id: produk.id },
+    data: { stok: { decrement: qty } },
+  });
+
+  await createActivity(
+    userId,
+    "Checkout Produk",
+    `Berhasil checkout pesanan ${orderId} dengan total Rp${totalBayar}`,
+  );
+
+  return {
+    success: true,
+    payment: {
+      token: payment.token,
+      redirect_url: payment.redirect_url,
+    },
+    pesanan,
+  };
+};
+
 //GET KABUPATEN
 export const getKabupatenService = async () => {
   const data = await prisma.ongkir.findMany({

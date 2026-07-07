@@ -31,6 +31,9 @@ import {
   getTopProdukDicariController,
   getTopViewProduk,
 
+  checkoutLangsungController,
+
+
 } from "../controller/pengguna_controller";
 
 
@@ -114,6 +117,8 @@ router.get("/notifikasi",authMiddleware,getNotifikasi,);
 
 //HAPUS AKUN
 router.delete("/delete-account",authMiddleware,deleteAkun,);
+
+router.post("/checkout-langsung", authMiddleware, checkoutLangsungController,);
 
 //LOG AKTIVITAS
 router.get("/aktivitas",authMiddleware,getAktivitas,);

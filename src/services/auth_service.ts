@@ -101,23 +101,42 @@ export const registerService = async ({ name, email, password }: any) => {
     where: { email },
   });
 
-  if (existingUser) {
+  // KALAU EMAIL SUDAH TERDAFTAR DAN SUDAH VERIFIKASI -> TOLAK
+  if (existingUser && existingUser.isVerified) {
     throw new Error("Email sudah digunakan");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOTP();
+  const otpExpired = new Date(Date.now() + 5 * 60 * 1000);
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role: "pengguna",
-      otpCode: otp,
-      otpExpired: new Date(Date.now() + 5 * 60 * 1000),
-    },
-  });
+  let user;
+
+  if (existingUser && !existingUser.isVerified) {
+    // EMAIL PERNAH DAFTAR TAPI BELUM VERIFIKASI OTP -> TIMPA DATA LAMA
+    user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        name,
+        password: hashedPassword,
+        otpCode: otp,
+        otpExpired,
+      },
+    });
+  } else {
+    // BELUM PERNAH DAFTAR SAMA SEKALI
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "pengguna",
+        otpCode: otp,
+        otpExpired,
+        isVerified: false,
+      },
+    });
+  }
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
@@ -330,6 +349,7 @@ export const verifyOtpService = async ({ email, otp }: any) => {
     data: {
       otpCode: null,
       otpExpired: null,
+      isVerified: true,
     },
   });
 

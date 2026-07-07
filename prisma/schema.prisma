@@ -33,6 +33,7 @@ model User {
   googleId      String?
   otpCode       String?
   otpExpired    DateTime?
+  isVerified    Boolean       @default(false)
   authProvider  AuthProvider  @default(local)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

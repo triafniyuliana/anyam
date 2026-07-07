@@ -34,6 +34,7 @@ import {
   getOngkirService,
   getTopProdukDicariService,
   getTopViewProdukService,
+  checkoutLangsungService,
 } from "../services/pengguna_service";
 
 // GET PROFILE
@@ -428,6 +429,40 @@ export const checkoutKeranjang = async (
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+
+// CHECKOUT LANGSUNG (BELI SEKARANG)
+export const checkoutLangsungController = async (
+  req: any,
+  res: any,
+) => {
+  try {
+    const userId = req.user.id;
+
+    const { produkId, qty } = req.body;
+
+    if (!produkId || !qty) {
+      return res.status(400).json({
+        success: false,
+        message: "produkId dan qty wajib diisi",
+      });
+    }
+
+    const result = await checkoutLangsungService(
+      userId,
+      produkId,
+      Number(qty),
+      req.body,
+    );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Terjadi kesalahan",
     });
   }
 };
