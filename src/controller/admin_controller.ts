@@ -22,6 +22,7 @@ import {
   getDashboardSummaryService,
   getBigdataSummaryService,
   updateStatusPesananService,
+  getTopViewedProdukService,
 } from "../services/admin_service";
 
 // DASHBOARD SUMMARY 
@@ -386,6 +387,26 @@ export const getProduk = async (
     return res.status(200).json({
       success: true,
       message: "Berhasil mengambil data produk",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getTopViewedProduk = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getTopViewedProdukService();
+
+    return res.status(200).json({
+      success: true,
+      message: "Berhasil mengambil produk paling banyak dilihat",
       data: result,
     });
   } catch (error: any) {
