@@ -15,6 +15,7 @@ import {
   updateTutorialVideo,
   deleteTutorialVideo,
   getProduk,
+  getTopViewedProduk,
   getDetailProduk,
   createProduk,
   updateProduk,
@@ -80,6 +81,9 @@ router.delete("/delete-tutorial-video/:id", deleteTutorialVideo);
 
 // GET PRODUK
 router.get("/produk", getProduk,);
+
+// GET TOP VIEWED PRODUK
+router.get("/produk/top-viewed", getTopViewedProduk,);
 
 // GET DETAIL PRODUK
 router.get("/produk/:id", getDetailProduk,);

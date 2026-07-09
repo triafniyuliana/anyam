@@ -558,6 +558,20 @@ export const getDetailProdukService = async (
   return produk;
 };
 
+export const getTopViewedProdukService = async () => {
+  return await prisma.produk.findMany({
+    select: {
+      id: true,
+      namaProduk: true,
+      viewCount: true,
+    },
+    orderBy: {
+      viewCount: "desc",
+    },
+    take: 10,
+  });
+};
+
 // CREATE PRODUK
 export const createProdukService = async (data: any) => {
   const {
