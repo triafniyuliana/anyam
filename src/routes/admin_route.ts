@@ -72,7 +72,10 @@ router.post(
 // UPDATE VIDEO
 router.put(
   "/update-tutorial-video/:id",
-  upload.single("video"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
   updateTutorialVideo,
 );
 

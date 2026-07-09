@@ -332,7 +332,6 @@ export const updatePengrajinService = async (id: string, data: any) => {
 };
 
 // DELETE PENGRAJIN
-// DELETE PENGRAJIN
 export const deletePengrajinService = async (id: string) => {
   const checkPengrajin = await prisma.user.findUnique({
     where: { id },
@@ -350,34 +349,55 @@ export const deletePengrajinService = async (id: string) => {
   }
 
   const pengrajin = await prisma.$transaction(async (tx) => {
+    // Ambil semua pesanan milik user ini (kalau pengrajin juga pernah belanja)
+    const pesananList = await tx.pesanan.findMany({
+      where: { userId: id },
+      select: { id: true },
+    });
+    const pesananIds = pesananList.map((p) => p.id);
+
+    if (pesananIds.length > 0) {
+      await tx.detailPesanan.deleteMany({
+        where: { pesananId: { in: pesananIds } },
+      });
+
+      await tx.pesanan.deleteMany({
+        where: { id: { in: pesananIds } },
+      });
+    }
+
+    // Review: hapus baik sebagai pengrajin (yg diulas) maupun sebagai user (yg ngulas)
     await tx.review.deleteMany({
       where: {
-        pengrajinId: id,
+        OR: [{ pengrajinId: id }, { userId: id }],
       },
     });
 
+    // PelatihanBooking: hapus baik sebagai pengrajin maupun sebagai user
     await tx.pelatihanBooking.deleteMany({
       where: {
-        pengrajinId: id,
+        OR: [{ pengrajinId: id }, { userId: id }],
       },
+    });
+
+    await tx.keranjang.deleteMany({
+      where: { userId: id },
+    });
+
+    await tx.aktivitas.deleteMany({
+      where: { userId: id },
     });
 
     await tx.notifikasi.deleteMany({
-      where: {
-        userId: id,
-      },
+      where: { userId: id },
     });
 
     await tx.pengrajinProfile.deleteMany({
-      where: {
-        userId: id,
-      },
+      where: { userId: id },
     });
 
     return await tx.user.delete({
-      where: {
-        id,
-      },
+      where: { id },
     });
   });
 
@@ -462,47 +482,34 @@ export const createTutorialVideoService =
   };
 
 // UPDATE VIDEO
-export const updateTutorialVideoService =
-  async (
-    id: string,
-    data: any,
-    file?: any,
-  ) => {
-    const { title } = data;
+export const updateTutorialVideoService = async (
+  id: string,
+  data: any,
+  file?: any,
+) => {
+  const { title, thumbnail } = data; // ambil thumbnail dari body juga
 
-    const checkVideo =
-      await prisma.tutorialVideo.findUnique({
-        where: {
-          id,
-        },
-      });
+  const checkVideo = await prisma.tutorialVideo.findUnique({
+    where: { id },
+  });
 
-    if (!checkVideo) {
-      throw new Error(
-        "Video tidak ditemukan",
-      );
-    }
+  if (!checkVideo) {
+    throw new Error("Video tidak ditemukan");
+  }
 
-    const video =
-      await prisma.tutorialVideo.update({
-        where: {
-          id,
-        },
+  const video = await prisma.tutorialVideo.update({
+    where: { id },
+    data: {
+      title: title ?? checkVideo.title,
+      videoUrl: file
+        ? `/uploads/${file.filename}`
+        : checkVideo.videoUrl,
+      thumbnail: thumbnail ?? checkVideo.thumbnail,
+    },
+  });
 
-        data: {
-          title,
-
-          videoUrl: file
-            ? `/uploads/${file.filename}`
-            : checkVideo.videoUrl,
-
-          thumbnail:
-            checkVideo.thumbnail,
-        },
-      });
-
-    return video;
-  };
+  return video;
+};
 
 // DELETE VIDEO
 export const deleteTutorialVideoService =
