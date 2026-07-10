@@ -132,14 +132,18 @@ export const registerService = async ({ name, email, password }: any) => {
   }
 
   // FIRE AND FORGET (Tanpa await)
-  transporter.sendMail({
-    from: "yuliiaan28@gmail.com",
-    to: user.email,
-    subject: "Kode OTP Register",
-    text: `Kode OTP Register Anda ${otp}`,
-  }).catch((err) => {
-    console.error("Gagal mengirim email OTP:", err.message);
-  });
+  try {
+    await transporter.sendMail({
+      from: "yuliiaan28@gmail.com", 
+      to: user.email,
+      subject: "Kode OTP Register - Anyam",
+      text: `Halo, kode OTP Register Anda adalah: ${otp}. Kode ini berlaku selama 5 menit.`,
+    });
+  } catch (err: any) {
+    console.error("❌ Gagal mengirim email OTP:", err.message);
+    // Batalkan atau beri notifikasi jika OTP gagal kirim, agar user bisa mendaftar ulang
+    throw new Error("Gagal mengirim kode OTP ke email. Pastikan email aktif atau coba beberapa saat lagi.");
+  }
 
   await createActivity(
     user.id,
