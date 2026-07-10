@@ -133,7 +133,7 @@ export const registerService = async ({ name, email, password }: any) => {
 
   // FIRE AND FORGET (Tanpa await)
   transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: "yuliiaan28@gmail.com",
     to: user.email,
     subject: "Kode OTP Register",
     text: `Kode OTP Register Anda ${otp}`,
@@ -378,7 +378,7 @@ export const requestResetPasswordService = async ({ email }: any) => {
 
   // FIRE AND FORGET
   transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: "yuliiaan28@gmail.com",
     to: user.email,
     subject: "Reset Password OTP",
     text: `Kode OTP Reset Password ${otp}`,
@@ -424,7 +424,7 @@ export const resendOtpService = async ({ email }: any) => {
 
   // FIRE AND FORGET
   transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: "yuliiaan28@gmail.com",
     to: user.email,
     subject: "Kode OTP Baru",
     text: `Kode OTP Anda ${otp}`,
