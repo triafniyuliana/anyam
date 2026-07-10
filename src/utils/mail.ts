@@ -5,12 +5,12 @@ console.log("Status EMAIL_USER :", process.env.EMAIL_USER ? "TERBACA" : "KOSONG/
 console.log("Status EMAIL_PASS :", process.env.EMAIL_PASS ? "TERBACA" : "KOSONG/UNDEFINED");
 
 export const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587, // UBAH PORT DARI 465 MENJADI 587
-  secure: false, // WAJIB FALSE UNTUK PORT 587 (Akan di-upgrade ke TLS secara otomatis)
+  host: "smtp-relay.brevo.com", // Menggunakan jalur khusus Brevo
+  port: 587,
+  secure: false, // Wajib false untuk port 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER, // Otomatis mengambil login Brevo dari Render
+    pass: process.env.EMAIL_PASS, // Otomatis mengambil password Brevo dari Render
   },
   tls: {
     rejectUnauthorized: false,
@@ -21,6 +21,6 @@ transporter.verify((error, success) => {
   if (error) {
     console.error("❌ ERROR KONEKSI EMAIL:", error.message);
   } else {
-    console.log("✅ KONEKSI EMAIL BERHASIL: Server siap mengirim OTP!");
+    console.log("✅ KONEKSI EMAIL BREVO BERHASIL: Server siap mengirim OTP!");
   }
 });
