@@ -12,7 +12,7 @@ export const sendEmailViaBrevo = async (toEmail: string, subject: string, textCo
   
   const payload = {
     sender: {
-      name: "Anyam",
+      name: "afni",
       email: "yuliiaan28@gmail.com" // WAJIB email pengirim yang sama dengan yang sudah diverifikasi di Brevo
     },
     to: [
