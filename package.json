@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js"
   },
-  "keywords": [], 
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
@@ -25,6 +25,7 @@
     "midtrans-client": "^1.4.3",
     "mongodb": "^7.2.0",
     "multer": "^2.2.0",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.10",
     "pdfkit": "^0.19.1",
     "prisma": "^5.22.0",
