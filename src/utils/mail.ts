@@ -1,32 +1,52 @@
-import nodemailer from "nodemailer";
+// src/utils/mail.ts
 
-console.log("--- DEBUG EMAIL ---");
-console.log("Status EMAIL_USER :", process.env.EMAIL_USER ? "TERBACA" : "KOSONG/UNDEFINED");
-console.log("Status EMAIL_PASS :", process.env.EMAIL_PASS ? "TERBACA" : "KOSONG/UNDEFINED");
-
-export const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 2525, // GANTI: Gunakan port 2525 untuk menembus firewall Cloud Provider
-  secure: false, // Tetap false untuk port 2525
-  pool: true,    // TAMBAHKAN: Mengaktifkan connection pool agar stabil di Render
-  maxConnections: 3, 
-  maxMessages: 10,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-  connectionTimeout: 10000, // Maksimal 10 detik menunggu koneksi
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ ERROR KONEKSI EMAIL:", error.message);
-  } else {
-    console.log("✅ KONEKSI EMAIL BREVO BERHASIL: Server siap mengirim OTP!");
+export const sendEmailViaBrevo = async (toEmail: string, subject: string, textContent: string) => {
+  const apiKey = process.env.BREVO_API_KEY;
+  
+  if (!apiKey) {
+    console.error("❌ BREVO_API_KEY tidak ditemukan di .env");
+    throw new Error("Konfigurasi API Email belum di-set");
   }
-});
+
+  const url = "https://api.brevo.com/v3/smtp/email";
+  
+  const payload = {
+    sender: {
+      name: "Anyam",
+      email: "yuliiaan28@gmail.com" // WAJIB email pengirim yang sama dengan yang sudah diverifikasi di Brevo
+    },
+    to: [
+      {
+        email: toEmail
+      }
+    ],
+    subject: subject,
+    textContent: textContent
+  };
+
+  try {
+    // Menggunakan native fetch bawaan Node.js versi 18+ ke atas
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": apiKey,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("❌ Brevo API Error:", errorData);
+      throw new Error("Brevo menolak pengiriman email");
+    }
+
+    console.log(`✅ Email OTP berhasil dikirim ke: ${toEmail} via Brevo API`);
+    return true;
+
+  } catch (error: any) {
+    console.error("❌ Gagal mengeksekusi request email:", error.message);
+    throw new Error("Gagal mengirim kode OTP ke email. Coba beberapa saat lagi.");
+  }
+};

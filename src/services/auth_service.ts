@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { generateToken } from "../utils/jwt";
 import { generateOTP } from "../utils/otp";
-import { transporter } from "../utils/mail";
+import { sendEmailViaBrevo } from "../utils/mail"; // ✔️ Menggunakan fungsi baru Brevo API
 import { OAuth2Client } from "google-auth-library";
 import { createActivity } from "../utils/activity";
 
@@ -131,17 +131,15 @@ export const registerService = async ({ name, email, password }: any) => {
     });
   }
 
-  // FIRE AND FORGET (Tanpa await)
+  // ✔️ AWAIT DITAMBAHKAN: Mengirim email via REST API dan dibungkus try/catch
   try {
-    await transporter.sendMail({
-      from: "yuliiaan28@gmail.com", 
-      to: user.email,
-      subject: "Kode OTP Register - Anyam",
-      text: `Halo, kode OTP Register Anda adalah: ${otp}. Kode ini berlaku selama 5 menit.`,
-    });
+    await sendEmailViaBrevo(
+      user.email,
+      "Kode OTP Register - Anyam",
+      `Halo ${user.name}, kode OTP Register Anda adalah: ${otp}. Kode ini berlaku selama 5 menit.`
+    );
   } catch (err: any) {
-    console.error("❌ Gagal mengirim email OTP:", err.message);
-    // Batalkan atau beri notifikasi jika OTP gagal kirim, agar user bisa mendaftar ulang
+    console.error("Gagal mengirim email OTP:", err.message);
     throw new Error("Gagal mengirim kode OTP ke email. Pastikan email aktif atau coba beberapa saat lagi.");
   }
 
@@ -380,15 +378,17 @@ export const requestResetPasswordService = async ({ email }: any) => {
     },
   });
 
-  // FIRE AND FORGET
-  transporter.sendMail({
-    from: "yuliiaan28@gmail.com",
-    to: user.email,
-    subject: "Reset Password OTP",
-    text: `Kode OTP Reset Password ${otp}`,
-  }).catch((err) => {
+  // ✔️ AWAIT DITAMBAHKAN
+  try {
+    await sendEmailViaBrevo(
+      user.email,
+      "Reset Password OTP - Anyam",
+      `Halo, kode OTP Reset Password Anda adalah: ${otp}. Kode ini berlaku selama 5 menit.`
+    );
+  } catch (err: any) {
     console.error("Gagal mengirim email OTP:", err.message);
-  });
+    throw new Error("Gagal mengirim kode OTP reset password ke email Anda. Coba beberapa saat lagi.");
+  }
 
   await createActivity(
     user.id,
@@ -426,15 +426,17 @@ export const resendOtpService = async ({ email }: any) => {
     },
   });
 
-  // FIRE AND FORGET
-  transporter.sendMail({
-    from: "yuliiaan28@gmail.com",
-    to: user.email,
-    subject: "Kode OTP Baru",
-    text: `Kode OTP Anda ${otp}`,
-  }).catch((err) => {
+  // ✔️ AWAIT DITAMBAHKAN
+  try {
+    await sendEmailViaBrevo(
+      user.email,
+      "Kode OTP Baru - Anyam",
+      `Halo, ini kode OTP baru Anda: ${otp}. Kode ini berlaku selama 5 menit.`
+    );
+  } catch (err: any) {
     console.error("Gagal mengirim ulang email OTP:", err.message);
-  });
+    throw new Error("Gagal mengirim ulang kode OTP ke email Anda. Coba beberapa saat lagi.");
+  }
 
   await createActivity(
     user.id,
