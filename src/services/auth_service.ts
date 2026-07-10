@@ -1,15 +1,9 @@
 import bcrypt from "bcryptjs";
-
 import { prisma } from "../lib/prisma";
-
 import { generateToken } from "../utils/jwt";
-
 import { generateOTP } from "../utils/otp";
-
 import { transporter } from "../utils/mail";
-
 import { OAuth2Client } from "google-auth-library";
-
 import { createActivity } from "../utils/activity";
 
 const googleClient = new OAuth2Client(
@@ -52,7 +46,7 @@ export const googleLoginService = async (
         email: payload.email,
         googleId: payload.sub,
         authProvider: "google",
-        role: role, // pengguna / pengrajin
+        role: role, 
       },
     });
   }
@@ -73,7 +67,6 @@ export const googleLoginService = async (
     success: true,
     message: "Login Google berhasil",
     token,
-
     user: {
       id: user.id,
       name: user.name,
@@ -138,11 +131,14 @@ export const registerService = async ({ name, email, password }: any) => {
     });
   }
 
-  await transporter.sendMail({
+  // FIRE AND FORGET (Tanpa await)
+  transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: user.email,
     subject: "Kode OTP Register",
     text: `Kode OTP Register Anda ${otp}`,
+  }).catch((err) => {
+    console.error("Gagal mengirim email OTP:", err.message);
   });
 
   await createActivity(
@@ -159,119 +155,70 @@ export const registerService = async ({ name, email, password }: any) => {
 };
 
 // REGISTER ADMIN
-export const registerService = async ({ name, email, password }: any) => {
+export const registerAdminService = async ({ name, email, password }: any) => {
   if (!name || !email || !password) {
     throw new Error("Semua field wajib diisi");
   }
 
-  if (!email.includes("@")) {
-    throw new Error("Format email tidak valid");
-  }
-
-  if (password.length < 6) {
-    throw new Error("Password minimal 6 karakter");
-  }
-
-  const existingUser = await prisma.user.findUnique({
+  const existingAdmin = await prisma.user.findUnique({
     where: { email },
   });
 
-  // KALAU EMAIL SUDAH TERDAFTAR DAN SUDAH VERIFIKASI -> TOLAK
-  if (existingUser && existingUser.isVerified) {
+  if (existingAdmin) {
     throw new Error("Email sudah digunakan");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const otp = generateOTP();
-  const otpExpired = new Date(Date.now() + 5 * 60 * 1000);
 
-  let user;
-
-  if (existingUser && !existingUser.isVerified) {
-    // EMAIL PERNAH DAFTAR TAPI BELUM VERIFIKASI OTP -> TIMPA DATA LAMA
-    user = await prisma.user.update({
-      where: { id: existingUser.id },
-      data: {
-        name,
-        password: hashedPassword,
-        otpCode: otp,
-        otpExpired,
-      },
-    });
-  } else {
-    // BELUM PERNAH DAFTAR SAMA SEKALI
-    user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: "pengguna",
-        otpCode: otp,
-        otpExpired,
-        isVerified: false,
-      },
-    });
-  }
-
-  // Pengiriman email diubah menjadi background task (Fire and Forget) tanpa 'await'
-  transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: user.email,
-    subject: "Kode OTP Register",
-    text: `Kode OTP Register Anda ${otp}`,
-  }).catch((error) => {
-    console.error("Gagal mengirim email OTP:", error.message);
+  const admin = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      role: "admin",
+    },
   });
-
-  await createActivity(
-    user.id,
-    "Registrasi",
-    "Berhasil membuat akun baru dan mengirim OTP",
-  );
 
   return {
     success: true,
-    message: "Register berhasil, OTP dikirim ke email",
-    email: user.email,
+    message: "Register admin berhasil",
+    user: {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    },
   };
 };
 
 // LOGIN ADMIN
 export const loginAdminService = async ({ email, password }: any) => {
-  // VALIDASI
   if (!email || !password) {
     throw new Error("Email dan password wajib diisi");
   }
 
-  // CHECK ADMIN
   const admin = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!admin) {
     throw new Error("Email atau password salah");
   }
 
-  // VALIDASI ROLE
   if (admin.role !== "admin") {
     throw new Error("Akses ditolak");
   }
 
-  // CHECK PASSWORD NULL
   if (!admin.password) {
     throw new Error("Password tidak tersedia");
   }
 
-  // CHECK PASSWORD
   const isMatch = await bcrypt.compare(password, admin.password);
 
   if (!isMatch) {
     throw new Error("Email atau password salah");
   }
 
-  // GENERATE TOKEN
   const token = generateToken({
     id: admin.id,
     email: admin.email,
@@ -282,7 +229,6 @@ export const loginAdminService = async ({ email, password }: any) => {
     success: true,
     message: "Login admin berhasil",
     token,
-
     user: {
       id: admin.id,
       name: admin.name,
@@ -320,7 +266,7 @@ export const loginService = async ({ email, password }: any) => {
     throw new Error("Email atau password salah");
   }
 
-  // VALIDASI KEBOCORAN LOGIKA: Cek apakah akun sudah melewati verifikasi OTP
+  // VALIDASI KEBOCORAN LOGIKA OTP
   if (!user.isVerified) {
     throw new Error("Akun belum diverifikasi. Silakan masukkan kode OTP yang telah dikirim ke email Anda.");
   }
@@ -341,7 +287,6 @@ export const loginService = async ({ email, password }: any) => {
     success: true,
     message: "Login berhasil",
     token,
-
     user: {
       id: user.id,
       name: user.name,
@@ -353,38 +298,28 @@ export const loginService = async ({ email, password }: any) => {
 
 // VERIFY OTP
 export const verifyOtpService = async ({ email, otp }: any) => {
-  // VALIDASI
   if (!email || !otp) {
     throw new Error("Email dan OTP wajib diisi");
   }
 
-  // CHECK USER
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
     throw new Error("User tidak ditemukan");
   }
 
-  // CHECK OTP
   if (user.otpCode !== otp) {
     throw new Error("OTP salah");
   }
 
-  // CHECK OTP EXPIRED
   if (user.otpExpired && user.otpExpired < new Date()) {
     throw new Error("OTP expired");
   }
 
-  // HAPUS OTP
   await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-
+    where: { id: user.id },
     data: {
       otpCode: null,
       otpExpired: null,
@@ -392,7 +327,6 @@ export const verifyOtpService = async ({ email, otp }: any) => {
     },
   });
 
-  // GENERATE TOKEN
   const token = generateToken({
     id: user.id,
     email: user.email,
@@ -409,7 +343,6 @@ export const verifyOtpService = async ({ email, otp }: any) => {
     success: true,
     message: "Login berhasil",
     token,
-
     user: {
       id: user.id,
       name: user.name,
@@ -421,47 +354,36 @@ export const verifyOtpService = async ({ email, otp }: any) => {
 
 // REQUEST RESET PASSWORD
 export const requestResetPasswordService = async ({ email }: any) => {
-  // VALIDASI
   if (!email) {
     throw new Error("Email wajib diisi");
   }
 
-  // CHECK USER
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
     throw new Error("User tidak ditemukan");
   }
 
-  // GENERATE OTP
   const otp = generateOTP();
 
-  // SIMPAN OTP
   await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-
+    where: { id: user.id },
     data: {
       otpCode: otp,
-
       otpExpired: new Date(Date.now() + 5 * 60 * 1000),
     },
   });
 
-  // KIRIM OTP
-  await transporter.sendMail({
+  // FIRE AND FORGET
+  transporter.sendMail({
     from: process.env.EMAIL_USER,
-
     to: user.email,
-
     subject: "Reset Password OTP",
-
     text: `Kode OTP Reset Password ${otp}`,
+  }).catch((err) => {
+    console.error("Gagal mengirim email OTP:", err.message);
   });
 
   await createActivity(
@@ -478,47 +400,36 @@ export const requestResetPasswordService = async ({ email }: any) => {
 
 // RESEND OTP
 export const resendOtpService = async ({ email }: any) => {
-  // VALIDASI
   if (!email) {
     throw new Error("Email wajib diisi");
   }
 
-  // CHECK USER
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
     throw new Error("User tidak ditemukan");
   }
 
-  // GENERATE OTP BARU
   const otp = generateOTP();
 
-  // UPDATE OTP
   await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-
+    where: { id: user.id },
     data: {
       otpCode: otp,
-
       otpExpired: new Date(Date.now() + 5 * 60 * 1000),
     },
   });
 
-  // KIRIM OTP
-  await transporter.sendMail({
+  // FIRE AND FORGET
+  transporter.sendMail({
     from: process.env.EMAIL_USER,
-
     to: user.email,
-
     subject: "Kode OTP Baru",
-
     text: `Kode OTP Anda ${otp}`,
+  }).catch((err) => {
+    console.error("Gagal mengirim ulang email OTP:", err.message);
   });
 
   await createActivity(
@@ -534,55 +445,35 @@ export const resendOtpService = async ({ email }: any) => {
 };
 
 // RESET PASSWORD
-export const resetPasswordService = async ({
-  email,
-  otp,
-  newPassword,
-}: any) => {
-  // VALIDASI
+export const resetPasswordService = async ({ email, otp, newPassword }: any) => {
   if (!email || !otp || !newPassword) {
     throw new Error("Semua field wajib diisi");
   }
 
-  // VALIDASI PASSWORD
   if (newPassword.length < 6) {
     throw new Error("Password minimal 6 karakter");
   }
 
-  // CHECK USER
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
-
-  console.log("OTP INPUT:", otp);
-
-  console.log("OTP DB:", user?.otpCode);
 
   if (!user) {
     throw new Error("User tidak ditemukan");
   }
 
-  // CHECK OTP
   if (user.otpCode !== otp) {
     throw new Error("OTP salah");
   }
 
-  // CHECK OTP EXPIRED
   if (user.otpExpired && user.otpExpired < new Date()) {
     throw new Error("OTP expired");
   }
 
-  // HASH PASSWORD BARU
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // UPDATE PASSWORD
   await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-
+    where: { id: user.id },
     data: {
       password: hashedPassword,
       otpCode: null,
