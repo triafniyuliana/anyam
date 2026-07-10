@@ -159,46 +159,80 @@ export const registerService = async ({ name, email, password }: any) => {
 };
 
 // REGISTER ADMIN
-export const registerAdminService = async ({ name, email, password }: any) => {
-  // VALIDASI
+export const registerService = async ({ name, email, password }: any) => {
   if (!name || !email || !password) {
     throw new Error("Semua field wajib diisi");
   }
 
-  // CHECK EMAIL
-  const existingAdmin = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+  if (!email.includes("@")) {
+    throw new Error("Format email tidak valid");
+  }
+
+  if (password.length < 6) {
+    throw new Error("Password minimal 6 karakter");
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
   });
 
-  if (existingAdmin) {
+  // KALAU EMAIL SUDAH TERDAFTAR DAN SUDAH VERIFIKASI -> TOLAK
+  if (existingUser && existingUser.isVerified) {
     throw new Error("Email sudah digunakan");
   }
 
-  // HASH PASSWORD
   const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = generateOTP();
+  const otpExpired = new Date(Date.now() + 5 * 60 * 1000);
 
-  // CREATE ADMIN
-  const admin = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role: "admin",
-    },
+  let user;
+
+  if (existingUser && !existingUser.isVerified) {
+    // EMAIL PERNAH DAFTAR TAPI BELUM VERIFIKASI OTP -> TIMPA DATA LAMA
+    user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        name,
+        password: hashedPassword,
+        otpCode: otp,
+        otpExpired,
+      },
+    });
+  } else {
+    // BELUM PERNAH DAFTAR SAMA SEKALI
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "pengguna",
+        otpCode: otp,
+        otpExpired,
+        isVerified: false,
+      },
+    });
+  }
+
+  // Pengiriman email diubah menjadi background task (Fire and Forget) tanpa 'await'
+  transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: "Kode OTP Register",
+    text: `Kode OTP Register Anda ${otp}`,
+  }).catch((error) => {
+    console.error("Gagal mengirim email OTP:", error.message);
   });
+
+  await createActivity(
+    user.id,
+    "Registrasi",
+    "Berhasil membuat akun baru dan mengirim OTP",
+  );
 
   return {
     success: true,
-    message: "Register admin berhasil",
-
-    user: {
-      id: admin.id,
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
-    },
+    message: "Register berhasil, OTP dikirim ke email",
+    email: user.email,
   };
 };
 
@@ -284,6 +318,11 @@ export const loginService = async ({ email, password }: any) => {
 
   if (!isMatch) {
     throw new Error("Email atau password salah");
+  }
+
+  // VALIDASI KEBOCORAN LOGIKA: Cek apakah akun sudah melewati verifikasi OTP
+  if (!user.isVerified) {
+    throw new Error("Akun belum diverifikasi. Silakan masukkan kode OTP yang telah dikirim ke email Anda.");
   }
 
   const token = generateToken({
