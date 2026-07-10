@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma";
 //GET DASHBOARD SUMMARY
 export const getDashboardSummaryService = async () => {
   const [totalUser, totalVideo, totalProduk, totalTransaksi] = await Promise.all([
-    prisma.user.count(), // Filter role dihapus agar semua user (admin, pengguna, pengrajin) terhitung
+    prisma.user.count(), 
     prisma.tutorialVideo.count(),
     prisma.produk.count(),
     prisma.pesanan.count(),
@@ -61,7 +61,6 @@ export const getUsersProfileService = async () => {
     where: {
       role: "pengguna",
     },
-
     select: {
       id: true,
       photo: true,
@@ -69,7 +68,6 @@ export const getUsersProfileService = async () => {
       email: true,
       createdAt: true,
     },
-
     orderBy: {
       createdAt: "desc",
     },
@@ -84,11 +82,9 @@ export const getPengrajinService = async () => {
     where: {
       role: "pengrajin",
     },
-
     include: {
       pengrajinProfile: true,
     },
-
     orderBy: {
       createdAt: "desc",
     },
@@ -96,91 +92,59 @@ export const getPengrajinService = async () => {
 
   return pengrajin.map((item) => ({
     id: item.id,
-
-    photo: item.photo,
-
+    photo: item.photo, // Langsung memanggil data HTTPS dari DB
     name: item.name,
-
     email: item.email,
-
     phone: item.pengrajinProfile?.noTelpon || "",
-
     address: item.pengrajinProfile?.alamat || "",
-
     experience: item.pengrajinProfile?.pengalaman || "",
-
     description: item.pengrajinProfile?.deskripsi || "",
-
     createdAt: item.createdAt,
   }));
 };
 
 // CREATE PENGRAJIN
 export const createPengrajinService = async (data: any) => {
-  const {
-    name,
-    email,
-    password,
-    photo,
-    phone,
-    address,
-    experience,
-    description,
-  } = data;
+  const { name, email, password, photo, phone, address, experience, description } = data;
 
-  // VALIDASI
   if (!name || !email || !password) {
     throw new Error("Semua field wajib diisi");
   }
 
-  // VALIDASI EMAIL
   if (!email.includes("@")) {
     throw new Error("Format email tidak valid");
   }
 
-  // VALIDASI PASSWORD
   if (password.length < 6) {
     throw new Error("Password minimal 6 karakter");
   }
 
-  // CHECK EMAIL
   const checkEmail = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (checkEmail) {
     throw new Error("Email sudah digunakan");
   }
 
-  // HASH PASSWORD
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // CREATE USER + PROFILE
   const pengrajin = await prisma.user.create({
     data: {
       name,
       email,
       password: hashedPassword,
-
       photo,
-
       role: "pengrajin",
-
       pengrajinProfile: {
         create: {
           alamat: address || "",
-
           noTelpon: phone || "",
-
           pengalaman: experience || "",
-
           deskripsi: description || "",
         },
       },
     },
-
     include: {
       pengrajinProfile: true,
     },
@@ -188,36 +152,23 @@ export const createPengrajinService = async (data: any) => {
 
   return {
     id: pengrajin.id,
-
     photo: pengrajin.photo,
-
     name: pengrajin.name,
-
     email: pengrajin.email,
-
     phone: pengrajin.pengrajinProfile?.noTelpon,
-
     address: pengrajin.pengrajinProfile?.alamat,
-
     experience: pengrajin.pengrajinProfile?.pengalaman,
-
     description: pengrajin.pengrajinProfile?.deskripsi,
-
     role: pengrajin.role,
-
     createdAt: pengrajin.createdAt,
   };
 };
+
 // GET DETAIL PENGRAJIN
 export const getDetailPengrajinService = async (id: string) => {
   const pengrajin = await prisma.user.findUnique({
-    where: {
-      id,
-    },
-
-    include: {
-      pengrajinProfile: true,
-    },
+    where: { id },
+    include: { pengrajinProfile: true },
   });
 
   if (!pengrajin) {
@@ -226,21 +177,13 @@ export const getDetailPengrajinService = async (id: string) => {
 
   return {
     id: pengrajin.id,
-
     photo: pengrajin.photo,
-
     name: pengrajin.name,
-
     email: pengrajin.email,
-
     phone: pengrajin.pengrajinProfile?.noTelpon || "",
-
     address: pengrajin.pengrajinProfile?.alamat || "",
-
     experience: pengrajin.pengrajinProfile?.pengalaman || "",
-
     description: pengrajin.pengrajinProfile?.deskripsi || "",
-
     createdAt: pengrajin.createdAt,
   };
 };
@@ -249,27 +192,18 @@ export const getDetailPengrajinService = async (id: string) => {
 export const updatePengrajinService = async (id: string, data: any) => {
   const { name, email, phone, address, experience, description, photo } = data;
 
-  // CHECK PENGRAJIN
   const checkPengrajin = await prisma.user.findUnique({
-    where: {
-      id,
-    },
-
-    include: {
-      pengrajinProfile: true,
-    },
+    where: { id },
+    include: { pengrajinProfile: true },
   });
 
   if (!checkPengrajin) {
     throw new Error("Pengrajin tidak ditemukan");
   }
 
-  // CHECK EMAIL
   if (email && email !== checkPengrajin.email) {
     const checkEmail = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (checkEmail) {
@@ -277,56 +211,33 @@ export const updatePengrajinService = async (id: string, data: any) => {
     }
   }
 
-  // UPDATE USER
   const pengrajin = await prisma.user.update({
-    where: {
-      id,
-    },
-
+    where: { id },
     data: {
       name,
-
       email,
-
-      ...(photo && {
-        photo,
-      }),
-
+      ...(photo && { photo }),
       pengrajinProfile: {
         update: {
           alamat: address,
-
           noTelpon: phone,
-
           pengalaman: experience,
-
           deskripsi: description,
         },
       },
     },
-
-    include: {
-      pengrajinProfile: true,
-    },
+    include: { pengrajinProfile: true },
   });
 
   return {
     id: pengrajin.id,
-
     photo: pengrajin.photo,
-
     name: pengrajin.name,
-
     email: pengrajin.email,
-
     phone: pengrajin.pengrajinProfile?.noTelpon,
-
     address: pengrajin.pengrajinProfile?.alamat,
-
     experience: pengrajin.pengrajinProfile?.pengalaman,
-
     description: pengrajin.pengrajinProfile?.deskripsi,
-
     createdAt: pengrajin.createdAt,
   };
 };
@@ -335,9 +246,7 @@ export const updatePengrajinService = async (id: string, data: any) => {
 export const deletePengrajinService = async (id: string) => {
   const checkPengrajin = await prisma.user.findUnique({
     where: { id },
-    include: {
-      pengrajinProfile: true,
-    },
+    include: { pengrajinProfile: true },
   });
 
   if (!checkPengrajin) {
@@ -349,7 +258,6 @@ export const deletePengrajinService = async (id: string) => {
   }
 
   const pengrajin = await prisma.$transaction(async (tx) => {
-    // Ambil semua pesanan milik user ini (kalau pengrajin juga pernah belanja)
     const pesananList = await tx.pesanan.findMany({
       where: { userId: id },
       select: { id: true },
@@ -360,45 +268,25 @@ export const deletePengrajinService = async (id: string) => {
       await tx.detailPesanan.deleteMany({
         where: { pesananId: { in: pesananIds } },
       });
-
       await tx.pesanan.deleteMany({
         where: { id: { in: pesananIds } },
       });
     }
 
-    // Review: hapus baik sebagai pengrajin (yg diulas) maupun sebagai user (yg ngulas)
     await tx.review.deleteMany({
-      where: {
-        OR: [{ pengrajinId: id }, { userId: id }],
-      },
+      where: { OR: [{ pengrajinId: id }, { userId: id }] },
     });
 
-    // PelatihanBooking: hapus baik sebagai pengrajin maupun sebagai user
     await tx.pelatihanBooking.deleteMany({
-      where: {
-        OR: [{ pengrajinId: id }, { userId: id }],
-      },
+      where: { OR: [{ pengrajinId: id }, { userId: id }] },
     });
 
-    await tx.keranjang.deleteMany({
-      where: { userId: id },
-    });
+    await tx.keranjang.deleteMany({ where: { userId: id } });
+    await tx.aktivitas.deleteMany({ where: { userId: id } });
+    await tx.notifikasi.deleteMany({ where: { userId: id } });
+    await tx.pengrajinProfile.deleteMany({ where: { userId: id } });
 
-    await tx.aktivitas.deleteMany({
-      where: { userId: id },
-    });
-
-    await tx.notifikasi.deleteMany({
-      where: { userId: id },
-    });
-
-    await tx.pengrajinProfile.deleteMany({
-      where: { userId: id },
-    });
-
-    return await tx.user.delete({
-      where: { id },
-    });
+    return await tx.user.delete({ where: { id } });
   });
 
   return {
@@ -416,94 +304,52 @@ export const deletePengrajinService = async (id: string) => {
 };
 
 // GET VIDEO
-export const getTutorialVideoService =
-  async () => {
-    const videos =
-      await prisma.tutorialVideo.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
+export const getTutorialVideoService = async () => {
+    const videos = await prisma.tutorialVideo.findMany({
+        orderBy: { createdAt: "desc" },
+    });
     return videos;
-  };
+};
 
 // GET DETAIL VIDEO
-export const getDetailTutorialVideoService =
-  async (id: string) => {
-    const video =
-      await prisma.tutorialVideo.findUnique({
-        where: {
-          id,
-        },
-      });
-
-    if (!video) {
-      throw new Error(
-        "Video tidak ditemukan",
-      );
-    }
-
+export const getDetailTutorialVideoService = async (id: string) => {
+    const video = await prisma.tutorialVideo.findUnique({
+        where: { id },
+    });
+    if (!video) throw new Error("Video tidak ditemukan");
     return video;
-  };
+};
 
 // CREATE VIDEO
-export const createTutorialVideoService =
-  async (
-    data: any,
-  ) => {
+export const createTutorialVideoService = async (data: any) => {
+    const { title, videoUrl, thumbnail } = data;
 
-    const {
-      title,
-      videoUrl,
-      thumbnail,
-    } = data;
-
-    if (
-      !title ||
-      !videoUrl ||
-      !thumbnail
-    ) {
-      throw new Error(
-        "Semua field wajib diisi",
-      );
+    if (!title || !videoUrl || !thumbnail) {
+      throw new Error("Semua field wajib diisi");
     }
 
-    const video =
-      await prisma.tutorialVideo.create({
-        data: {
-          title,
-          videoUrl,
-          thumbnail,
-        },
-      });
+    const video = await prisma.tutorialVideo.create({
+        data: { title, videoUrl, thumbnail },
+    });
 
     return video;
-  };
+};
 
 // UPDATE VIDEO
-export const updateTutorialVideoService = async (
-  id: string,
-  data: any,
-  file?: any,
-) => {
-  const { title, thumbnail } = data; // ambil thumbnail dari body juga
+export const updateTutorialVideoService = async (id: string, data: any, file?: any) => {
+  const { title, thumbnail } = data;
 
   const checkVideo = await prisma.tutorialVideo.findUnique({
     where: { id },
   });
 
-  if (!checkVideo) {
-    throw new Error("Video tidak ditemukan");
-  }
+  if (!checkVideo) throw new Error("Video tidak ditemukan");
 
   const video = await prisma.tutorialVideo.update({
     where: { id },
     data: {
       title: title ?? checkVideo.title,
-      videoUrl: file
-        ? `/uploads/${file.filename}`
-        : checkVideo.videoUrl,
+      videoUrl: file ? file.path : checkVideo.videoUrl, // Ubah path file
       thumbnail: thumbnail ?? checkVideo.thumbnail,
     },
   });
@@ -512,56 +358,32 @@ export const updateTutorialVideoService = async (
 };
 
 // DELETE VIDEO
-export const deleteTutorialVideoService =
-  async (id: string) => {
-    const checkVideo =
-      await prisma.tutorialVideo.findUnique({
-        where: {
-          id,
-        },
-      });
-
-    if (!checkVideo) {
-      throw new Error(
-        "Video tidak ditemukan",
-      );
-    }
+export const deleteTutorialVideoService = async (id: string) => {
+    const checkVideo = await prisma.tutorialVideo.findUnique({
+        where: { id },
+    });
+    if (!checkVideo) throw new Error("Video tidak ditemukan");
 
     await prisma.tutorialVideo.delete({
-      where: {
-        id,
-      },
+        where: { id },
     });
 
     return true;
-  };
+};
 
 //GET PRODUK
 export const getProdukService = async () => {
   return await prisma.produk.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 };
 
 //GET DETAIL PRODUK
-export const getDetailProdukService = async (
-  id: string
-) => {
-  const produk =
-    await prisma.produk.findUnique({
-      where: {
-        id,
-      },
-    });
-
-  if (!produk) {
-    throw new Error(
-      "Produk tidak ditemukan"
-    );
-  }
-
+export const getDetailProdukService = async (id: string) => {
+  const produk = await prisma.produk.findUnique({
+      where: { id },
+  });
+  if (!produk) throw new Error("Produk tidak ditemukan");
   return produk;
 };
 
@@ -572,35 +394,16 @@ export const getTopViewedProdukService = async () => {
       namaProduk: true,
       viewCount: true,
     },
-    orderBy: {
-      viewCount: "desc",
-    },
+    orderBy: { viewCount: "desc" },
     take: 10,
   });
 };
 
 // CREATE PRODUK
 export const createProdukService = async (data: any) => {
-  const {
-    namaProduk,
-    keywordTrend,
-    deskripsi,
-    harga,
-    stok,
-    foto,
-    kategori,
-    ukuran,
-    bahan,
-  } = data;
+  const { namaProduk, keywordTrend, deskripsi, harga, stok, foto, kategori, ukuran, bahan } = data;
 
-  if (
-    !namaProduk ||
-    !keywordTrend ||
-    !deskripsi ||
-    !harga ||
-    !stok ||
-    !kategori
-  ) {
+  if (!namaProduk || !keywordTrend || !deskripsi || !harga || !stok || !kategori) {
     throw new Error("Semua field wajib diisi");
   }
 
@@ -621,150 +424,75 @@ export const createProdukService = async (data: any) => {
 
 // UPDATE PRODUK
 export const updateProdukService = async (id: string, data: any) => {
-  const produk = await prisma.produk.findUnique({
-    where: {
-      id,
-    },
-  });
+  const produk = await prisma.produk.findUnique({ where: { id } });
+  if (!produk) throw new Error("Produk tidak ditemukan");
 
-  if (!produk) {
-    throw new Error("Produk tidak ditemukan");
-  }
-
-  const {
-    namaProduk,
-    keywordTrend,
-    deskripsi,
-    harga,
-    stok,
-    foto,
-    kategori,
-    ukuran,
-    bahan,
-  } = data;
+  const { namaProduk, keywordTrend, deskripsi, harga, stok, foto, kategori, ukuran, bahan } = data;
 
   return await prisma.produk.update({
-    where: {
-      id,
-    },
-
+    where: { id },
     data: {
       namaProduk,
-      keywordTrend: keywordTrend
-        ? keywordTrend.toLowerCase().trim()
-        : produk.keywordTrend,
+      keywordTrend: keywordTrend ? keywordTrend.toLowerCase().trim() : produk.keywordTrend,
       deskripsi,
       harga: Number(harga),
       stok: Number(stok),
       kategori,
       ukuran,
       bahan,
-
       foto: foto ?? produk.foto,
     },
   });
 };
 
 //DELETE PRODUK
-export const deleteProdukService = async (
-  id: string
-) => {
-  const produk =
-    await prisma.produk.findUnique({
-      where: {
-        id,
-      },
-    });
+export const deleteProdukService = async (id: string) => {
+  const produk = await prisma.produk.findUnique({ where: { id } });
+  if (!produk) throw new Error("Produk tidak ditemukan");
 
-  if (!produk) {
-    throw new Error(
-      "Produk tidak ditemukan"
-    );
-  }
-
-  await prisma.produk.delete({
-    where: {
-      id,
-    },
-  });
-
+  await prisma.produk.delete({ where: { id } });
   return true;
 };
 
-export const getPesananAdminService =
-  async () => {
-
-    const pesanan =
-      await prisma.pesanan.findMany({
+export const getPesananAdminService = async () => {
+    const pesanan = await prisma.pesanan.findMany({
         include: {
           user: true,
-
           detailPesanan: {
-            include: {
-              produk: true,
-            },
+            include: { produk: true },
           },
         },
+        orderBy: { createdAt: "desc" },
+    });
+    return { success: true, pesanan };
+};
 
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-    return {
-      success: true,
-      pesanan,
-    };
-  };
-
-export const kirimPesananService = async (
-  pesananId: string,
-  nomorResi: string,
-) => {
-
-  const pesanan =
-    await prisma.pesanan.update({
-      where: {
-        id: pesananId,
-      },
-
+export const kirimPesananService = async (pesananId: string, nomorResi: string) => {
+  const pesanan = await prisma.pesanan.update({
+      where: { id: pesananId },
       data: {
         statusPesanan: "dikirim",
         nomorResi,
       },
-    });
+  });
 
   await prisma.notifikasi.create({
     data: {
       userId: pesanan.userId,
-
       judul: "Pesanan Dikirim",
-
-      pesan:
-        `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
+      pesan: `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
     },
   });
 
-  io.emit(
-    "notifikasi",
-    {
+  io.emit("notifikasi", {
       judul: "Pesanan Dikirim",
+      pesan: `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
+  });
 
-      pesan:
-        `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
-    },
-  );
-
-  return {
-    success: true,
-    data: pesanan,
-  };
+  return { success: true, data: pesanan };
 };
 
-export const updateStatusPesananService = async (
-  pesananId: string,
-  statusPesanan: string,
-) => {
+export const updateStatusPesananService = async (pesananId: string, statusPesanan: string) => {
   const validStatus = ["diproses", "diterima", "dikemas", "dikirim", "selesai"];
 
   if (!validStatus.includes(statusPesanan)) {
@@ -772,21 +500,14 @@ export const updateStatusPesananService = async (
   }
 
   const pesanan = await prisma.pesanan.update({
-    where: {
-      id: pesananId,
-    },
-
-    data: {
-      statusPesanan,
-    },
+    where: { id: pesananId },
+    data: { statusPesanan },
   });
 
   await prisma.notifikasi.create({
     data: {
       userId: pesanan.userId,
-
       judul: "Status Pesanan Diperbarui",
-
       pesan: `Pesanan ${pesanan.orderId} sekarang berstatus "${statusPesanan}".`,
     },
   });
@@ -796,8 +517,5 @@ export const updateStatusPesananService = async (
     pesan: `Pesanan ${pesanan.orderId} sekarang berstatus "${statusPesanan}".`,
   });
 
-  return {
-    success: true,
-    data: pesanan,
-  };
+  return { success: true, data: pesanan };
 };

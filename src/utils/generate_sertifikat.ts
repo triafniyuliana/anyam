@@ -1,6 +1,5 @@
 import PDFDocument from "pdfkit";
-import fs from "fs";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 export const generateSertifikat = (
   nama: string,
@@ -8,15 +7,6 @@ export const generateSertifikat = (
   bookingId: string,
 ) => {
   return new Promise<string>((resolve, reject) => {
-    const namaFile = `sertifikat-${bookingId}.pdf`;
-    const folder = path.join(__dirname, "../../uploads/sertifikat");
-
-    if (!fs.existsSync(folder)) {
-      fs.mkdirSync(folder, { recursive: true });
-    }
-
-    const filePath = path.join(folder, namaFile);
-
     // ── SETUP DOC ─────────────────────────────────────────────────────
     const doc = new PDFDocument({
       size: "A4",
@@ -24,7 +14,25 @@ export const generateSertifikat = (
       margin: 0,
     });
 
-    const stream = fs.createWriteStream(filePath);
+    // ── UPLOAD STREAM KE CLOUDINARY ───────────────────────────────────
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "anyaman_sertifikat",
+        resource_type: "auto", // PDF akan otomatis dikenali
+        format: "pdf",
+        public_id: `sertifikat-${bookingId}`,
+      },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary Error:", error);
+          return reject(error);
+        }
+        // Mengembalikan link URL Cloudinary yang aman (https)
+        resolve(result!.secure_url);
+      }
+    );
+
+    // Salurkan hasil PDF langsung ke jalur upload Cloudinary
     doc.pipe(stream);
 
     const W = doc.page.width;   // 841.89
@@ -57,25 +65,20 @@ export const generateSertifikat = (
 
     // ── HEADER STRIP ──────────────────────────────────────────────────
     doc.rect(0, 0, W, 110).fill(COKLAT_TUA);
-
-    // garis emas bawah strip
     doc.rect(0, 106, W, 4).fill(EMAS);
 
-    // ── LOGO / ICON ANYAMAN (lingkaran emas) ──────────────────────────
     const cx = W / 2;
     doc
       .circle(cx, 110, 38)
       .lineWidth(3)
       .fillAndStroke(KREM, EMAS);
 
-    // teks inisial di dalam lingkaran
     doc
       .fillColor(COKLAT_TUA)
       .fontSize(18)
       .font("Helvetica-Bold")
       .text("AN", cx - 16, 97, { width: 32, align: "center" });
 
-    // ── JUDUL APLIKASI (di strip) ─────────────────────────────────────
     doc
       .fillColor(EMAS_MUDA)
       .fontSize(11)
@@ -96,7 +99,6 @@ export const generateSertifikat = (
         characterSpacing: 4,
       });
 
-    // ── JUDUL SERTIFIKAT ──────────────────────────────────────────────
     doc
       .fillColor(COKLAT_MID)
       .fontSize(11)
@@ -116,7 +118,6 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // garis dekoratif bawah judul
     const lineY = 228;
     const lineW = 180;
     doc
@@ -133,7 +134,6 @@ export const generateSertifikat = (
       .lineWidth(1)
       .stroke(EMAS);
 
-    // ── TEKS DIBERIKAN KEPADA ─────────────────────────────────────────
     doc
       .fillColor(COKLAT_MUDA)
       .fontSize(12)
@@ -143,7 +143,6 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // ── NAMA PESERTA ──────────────────────────────────────────────────
     doc
       .fillColor(COKLAT_TUA)
       .fontSize(36)
@@ -153,7 +152,6 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // garis bawah nama
     const namaLineY = 318;
     doc
       .moveTo(cx - 200, namaLineY)
@@ -161,7 +159,6 @@ export const generateSertifikat = (
       .lineWidth(1)
       .stroke(COKLAT_MUDA);
 
-    // ── TEKS KELAS ────────────────────────────────────────────────────
     doc
       .fillColor(COKLAT_MUDA)
       .fontSize(12)
@@ -180,7 +177,6 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // ── TANGGAL ───────────────────────────────────────────────────────
     const tgl = new Date().toLocaleDateString("id-ID", {
       day: "numeric",
       month: "long",
@@ -196,7 +192,6 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // ── ID SERTIFIKAT ─────────────────────────────────────────────────
     doc
       .fillColor(COKLAT_MUDA)
       .fontSize(9)
@@ -206,11 +201,9 @@ export const generateSertifikat = (
         width: W,
       });
 
-    // ── FOOTER STRIP ──────────────────────────────────────────────────
     doc.rect(0, H - 72, W, 72).fill(COKLAT_TUA);
     doc.rect(0, H - 72, W, 3).fill(EMAS);
 
-    // kolom kiri - TTD
     doc
       .fillColor(EMAS_MUDA)
       .fontSize(9)
@@ -229,7 +222,6 @@ export const generateSertifikat = (
       .font("Helvetica-Bold")
       .text("Platform Anyaman", 60, H - 28, { width: 160, align: "center" });
 
-    // kolom kanan - verifikasi
     doc
       .fillColor(EMAS_MUDA)
       .fontSize(9)
@@ -254,20 +246,16 @@ export const generateSertifikat = (
         align: "center",
       });
 
-    // ── ORNAMEN POJOK ─────────────────────────────────────────────────
     _cornerOrnament(doc, 38, 38, EMAS);
     _cornerOrnament(doc, W - 38, 38, EMAS);
     _cornerOrnament(doc, 38, H - 38, EMAS);
     _cornerOrnament(doc, W - 38, H - 38, EMAS);
 
-    // ── SELESAI ───────────────────────────────────────────────────────
+    // SELESAI MENGGAMBAR, TUTUP STREAM
     doc.end();
-    stream.on("finish", () => resolve(`/uploads/sertifikat/${namaFile}`));
-    stream.on("error", reject);
   });
 };
 
-// ── HELPER: ORNAMEN SUDUT ─────────────────────────────────────────────────────
 function _cornerOrnament(
   doc: PDFKit.PDFDocument,
   x: number,

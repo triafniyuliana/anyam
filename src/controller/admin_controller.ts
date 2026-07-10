@@ -86,20 +86,14 @@ export const createPengrajin = async (req: Request, res: Response) => {
   try {
     const data = {
       name: req.body.name,
-
       email: req.body.email,
-
       password: req.body.password,
-
       phone: req.body.phone,
-
       address: req.body.address,
-
       experience: req.body.experience,
-
       description: req.body.description,
-
-      photo: req.file ? req.file.filename : null,
+      // Mengubah filename menjadi path (URL Cloudinary)
+      photo: req.file ? req.file.path : null, 
     };
 
     const result = await createPengrajinService(data);
@@ -111,7 +105,6 @@ export const createPengrajin = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.log(error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -123,7 +116,6 @@ export const createPengrajin = async (req: Request, res: Response) => {
 export const getDetailPengrajin = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-
     const result = await getDetailPengrajinService(id);
 
     return res.status(200).json({
@@ -132,7 +124,6 @@ export const getDetailPengrajin = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.log(error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -147,35 +138,26 @@ export const updatePengrajin = async (req: Request, res: Response) => {
 
     const data = {
       name: req.body.name,
-
       email: req.body.email,
-
       phone: req.body.phone,
-
       address: req.body.address,
-
       experience: req.body.experience,
-
       description: req.body.description,
-
-      photo: req.file ? req.file.filename : undefined,
+      // Mengubah filename menjadi path
+      photo: req.file ? req.file.path : undefined, 
     };
 
     const result = await updatePengrajinService(id, data);
 
     return res.status(200).json({
       success: true,
-
       message: "Pengrajin berhasil diupdate",
-
       data: result,
     });
   } catch (error: any) {
     console.log(error);
-
     return res.status(500).json({
       success: false,
-
       message: error.message,
     });
   }
@@ -208,15 +190,9 @@ export const deletePengrajin = async (req: Request, res: Response) => {
 };
 
 // GET VIDEO
-export const getTutorialVideo =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const getTutorialVideo = async (req: Request, res: Response) => {
     try {
-      const result =
-        await getTutorialVideoService();
-
+      const result = await getTutorialVideoService();
       return res.status(200).json({
         success: true,
         data: result,
@@ -224,27 +200,16 @@ export const getTutorialVideo =
     } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
 
 // GET DETAIL VIDEO
-export const getDetailTutorialVideo =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const getDetailTutorialVideo = async (req: Request, res: Response) => {
     try {
-      const id =
-        req.params.id as string;
-
-      const result =
-        await getDetailTutorialVideoService(
-          id,
-        );
-
+      const id = req.params.id as string;
+      const result = await getDetailTutorialVideoService(id);
       return res.status(200).json({
         success: true,
         data: result,
@@ -252,60 +217,34 @@ export const getDetailTutorialVideo =
     } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
 
 // CREATE VIDEO
-export const createTutorialVideo =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const createTutorialVideo = async (req: Request, res: Response) => {
     try {
-
-      const files =
-        req.files as {
-          [fieldname: string]:
-          Express.Multer.File[];
-        };
-
-      const thumbnail =
-        files?.thumbnail?.[0];
-
-      const video =
-        files?.video?.[0];
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const thumbnail = files?.thumbnail?.[0];
+      const video = files?.video?.[0];
 
       const data = {
         title: req.body.title,
-
-        thumbnail: thumbnail
-          ? `/uploads/${thumbnail.filename}`
-          : "",
-
-        videoUrl: video
-          ? `/uploads/${video.filename}`
-          : "",
+        // Gunakan URL Cloudinary langsung, tidak perlu di hardcode /uploads/
+        thumbnail: thumbnail ? thumbnail.path : "",
+        videoUrl: video ? video.path : "",
       };
 
-      const result =
-        await createTutorialVideoService(
-          data,
-        );
+      const result = await createTutorialVideoService(data);
 
       return res.status(201).json({
         success: true,
-        message:
-          "Video berhasil ditambahkan",
+        message: "Video berhasil ditambahkan",
         data: result,
       });
-
     } catch (error: any) {
-
       console.log(error);
-
       return res.status(500).json({
         success: false,
         message: error.message,
@@ -314,76 +253,46 @@ export const createTutorialVideo =
   };
 
 // UPDATE VIDEO
-export const updateTutorialVideo =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const updateTutorialVideo = async (req: Request, res: Response) => {
     try {
-
-      const id =
-        req.params.id as string;
-
-      const result =
-        await updateTutorialVideoService(
-          id,
-          req.body,
-          req.file,
-        );
+      const id = req.params.id as string;
+      const result = await updateTutorialVideoService(id, req.body, req.file);
 
       return res.status(200).json({
         success: true,
-        message:
-          "Video berhasil diupdate",
+        message: "Video berhasil diupdate",
         data: result,
       });
-
     } catch (error: any) {
-
       return res.status(500).json({
         success: false,
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
 
 // DELETE VIDEO
-export const deleteTutorialVideo =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const deleteTutorialVideo = async (req: Request, res: Response) => {
     try {
-      const id =
-        req.params.id as string;
-
-      await deleteTutorialVideoService(
-        id,
-      );
+      const id = req.params.id as string;
+      await deleteTutorialVideoService(id);
 
       return res.status(200).json({
         success: true,
-        message:
-          "Video berhasil dihapus",
+        message: "Video berhasil dihapus",
       });
     } catch (error: any) {
       return res.status(500).json({
         success: false,
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
 
 // GET PRODUK
-export const getProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const getProduk = async (req: Request, res: Response) => {
   try {
     const result = await getProdukService();
-
     return res.status(200).json({
       success: true,
       message: "Berhasil mengambil data produk",
@@ -397,13 +306,9 @@ export const getProduk = async (
   }
 };
 
-export const getTopViewedProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const getTopViewedProduk = async (req: Request, res: Response) => {
   try {
     const result = await getTopViewedProdukService();
-
     return res.status(200).json({
       success: true,
       message: "Berhasil mengambil produk paling banyak dilihat",
@@ -418,16 +323,10 @@ export const getTopViewedProduk = async (
 };
 
 // GET DETAIL PRODUK
-export const getDetailProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const getDetailProduk = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-
-    const result =
-      await getDetailProdukService(id);
-
+    const result = await getDetailProdukService(id);
     return res.status(200).json({
       success: true,
       data: result,
@@ -441,31 +340,18 @@ export const getDetailProduk = async (
 };
 
 // CREATE PRODUK
-export const createProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const createProduk = async (req: Request, res: Response) => {
   try {
     const data = {
       namaProduk: req.body.namaProduk,
-
       keywordTrend: req.body.keywordTrend,
-
       deskripsi: req.body.deskripsi,
-
       harga: Number(req.body.harga),
-
       stok: Number(req.body.stok),
-
       kategori: req.body.kategori,
-
       ukuran: req.body.ukuran,
-
       bahan: req.body.bahan,
-
-      foto: req.file
-        ? req.file.filename
-        : null,
+      foto: req.file ? req.file.path : null, // Ganti ke req.file.path
     };
 
     const result = await createProdukService(data);
@@ -484,33 +370,20 @@ export const createProduk = async (
 };
 
 // UPDATE PRODUK
-export const updateProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const updateProduk = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
 
     const data = {
       namaProduk: req.body.namaProduk,
-
       keywordTrend: req.body.keywordTrend,
-
       deskripsi: req.body.deskripsi,
-
       harga: Number(req.body.harga),
-
       stok: Number(req.body.stok),
-
       kategori: req.body.kategori,
-
       ukuran: req.body.ukuran,
-
       bahan: req.body.bahan,
-
-      foto: req.file
-        ? req.file.filename
-        : undefined,
+      foto: req.file ? req.file.path : undefined, // Ganti ke req.file.path
     };
 
     const result = await updateProdukService(id, data);
@@ -529,19 +402,14 @@ export const updateProduk = async (
 };
 
 // DELETE PRODUK
-export const deleteProduk = async (
-  req: Request,
-  res: Response,
-) => {
+export const deleteProduk = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-
     await deleteProdukService(id);
 
     return res.status(200).json({
       success: true,
-      message:
-        "Produk berhasil dihapus",
+      message: "Produk berhasil dihapus",
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -551,20 +419,11 @@ export const deleteProduk = async (
   }
 };
 
-export const getPesananAdmin =
-  async (
-    req: Request,
-    res: Response,
-  ) => {
+export const getPesananAdmin = async (req: Request, res: Response) => {
     try {
-
-      const result =
-        await getPesananAdminService();
-
+      const result = await getPesananAdminService();
       return res.json(result);
-
     } catch (error: any) {
-
       return res.status(500).json({
         success: false,
         message: error.message,
@@ -572,28 +431,13 @@ export const getPesananAdmin =
     }
   };
 
-export const kirimPesanan = async (
-  req: Request,
-  res: Response,
-) => {
+export const kirimPesanan = async (req: Request, res: Response) => {
   try {
-
-    const pesananId =
-      req.params.pesananId as string;
-
-    const nomorResi =
-      req.body.nomorResi as string;
-
-    const result =
-      await kirimPesananService(
-        pesananId,
-        nomorResi,
-      );
-
+    const pesananId = req.params.pesananId as string;
+    const nomorResi = req.body.nomorResi as string;
+    const result = await kirimPesananService(pesananId, nomorResi);
     return res.json(result);
-
   } catch (error: any) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -605,9 +449,7 @@ export const updateStatusPesanan = async (req: any, res: any) => {
   try {
     const { pesananId } = req.params;
     const { statusPesanan } = req.body;
-
     const result = await updateStatusPesananService(pesananId, statusPesanan);
-
     res.json(result);
   } catch (error: any) {
     res.status(400).json({
