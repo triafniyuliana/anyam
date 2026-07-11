@@ -26,6 +26,7 @@ const storage = new CloudinaryStorage({
       folder: "anyaman_uploads",
       resource_type: resourceType,
       public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
+      format: resourceType === "video" ? "mp4" : undefined, // <--- TAMBAHKAN BARIS INI
     };
   },
 });
@@ -33,8 +34,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    // Memastikan batas ukuran cukup untuk video (100MB)
-    fileSize: 100 * 1024 * 1024,
+    fileSize: 500 * 1024 * 1024,
   },
 });
 
