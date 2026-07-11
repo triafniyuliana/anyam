@@ -10,10 +10,21 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req: any, file: any) => { // <-- PERUBAHAN ADA DI SINI
+  params: async (req: any, file: any) => {
+    
+    // PERBAIKAN: Pendeteksian resource_type dinamis
+    let resourceType = "auto";
+    if (file.mimetype.startsWith("video/")) {
+      resourceType = "video";
+    } else if (file.mimetype.startsWith("image/")) {
+      resourceType = "image";
+    } else if (file.mimetype === "application/pdf") {
+      resourceType = "raw"; 
+    }
+
     return {
       folder: "anyaman_uploads",
-      resource_type: "auto", 
+      resource_type: resourceType,
       public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
     };
   },
@@ -22,6 +33,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({
   storage: storage,
   limits: {
+    // Memastikan batas ukuran cukup untuk video (100MB)
     fileSize: 100 * 1024 * 1024,
   },
 });
