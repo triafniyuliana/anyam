@@ -39,6 +39,22 @@ export const googleLoginService = async (
     },
   });
 
+  // Jika akun sudah ada dan sebelumnya login menggunakan email/password,
+  // hubungkan akun tersebut dengan Google
+  if (user && user.authProvider === "local" && !user.googleId) {
+    user = await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        googleId: payload.sub,
+        authProvider: "google",
+        isVerified: true,
+      },
+    });
+  }
+
+  // Jika akun belum ada, buat akun baru
   if (!user) {
     user = await prisma.user.create({
       data: {
@@ -47,6 +63,9 @@ export const googleLoginService = async (
         googleId: payload.sub,
         authProvider: "google",
         role: role,
+        isVerified: true,
+        otpCode: null,
+        otpExpired: null,
       },
     });
   }
