@@ -84,6 +84,7 @@ export const updateProfilePengrajin = async (
       await updateProfilePengrajinService(
         req.user.id,
         req.body,
+        req.file,
       );
 
     return res.status(200).json(
