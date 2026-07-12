@@ -46,7 +46,7 @@ export const googleLoginService = async (
         email: payload.email,
         googleId: payload.sub,
         authProvider: "google",
-        role: role, 
+        role: role,
       },
     });
   }
@@ -269,7 +269,7 @@ export const loginService = async ({ email, password }: any) => {
   }
 
   // VALIDASI KEBOCORAN LOGIKA OTP
-  if (!user.isVerified) {
+  if (user.role === "pengguna" && !user.isVerified) {
     throw new Error("Akun belum diverifikasi. Silakan masukkan kode OTP yang telah dikirim ke email Anda.");
   }
 

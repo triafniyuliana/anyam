@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma";
 //GET DASHBOARD SUMMARY
 export const getDashboardSummaryService = async () => {
   const [totalUser, totalVideo, totalProduk, totalTransaksi] = await Promise.all([
-    prisma.user.count(), 
+    prisma.user.count(),
     prisma.tutorialVideo.count(),
     prisma.produk.count(),
     prisma.pesanan.count(),
@@ -136,6 +136,11 @@ export const createPengrajinService = async (data: any) => {
       password: hashedPassword,
       photo,
       role: "pengrajin",
+
+      isVerified: true,
+      otpCode: null,
+      otpExpired: null,
+
       pengrajinProfile: {
         create: {
           alamat: address || "",
@@ -305,34 +310,34 @@ export const deletePengrajinService = async (id: string) => {
 
 // GET VIDEO
 export const getTutorialVideoService = async () => {
-    const videos = await prisma.tutorialVideo.findMany({
-        orderBy: { createdAt: "desc" },
-    });
-    return videos;
+  const videos = await prisma.tutorialVideo.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+  return videos;
 };
 
 // GET DETAIL VIDEO
 export const getDetailTutorialVideoService = async (id: string) => {
-    const video = await prisma.tutorialVideo.findUnique({
-        where: { id },
-    });
-    if (!video) throw new Error("Video tidak ditemukan");
-    return video;
+  const video = await prisma.tutorialVideo.findUnique({
+    where: { id },
+  });
+  if (!video) throw new Error("Video tidak ditemukan");
+  return video;
 };
 
 // CREATE VIDEO
 export const createTutorialVideoService = async (data: any) => {
-    const { title, videoUrl, thumbnail } = data;
+  const { title, videoUrl, thumbnail } = data;
 
-    if (!title || !videoUrl || !thumbnail) {
-      throw new Error("Semua field wajib diisi");
-    }
+  if (!title || !videoUrl || !thumbnail) {
+    throw new Error("Semua field wajib diisi");
+  }
 
-    const video = await prisma.tutorialVideo.create({
-        data: { title, videoUrl, thumbnail },
-    });
+  const video = await prisma.tutorialVideo.create({
+    data: { title, videoUrl, thumbnail },
+  });
 
-    return video;
+  return video;
 };
 
 // UPDATE VIDEO
@@ -359,16 +364,16 @@ export const updateTutorialVideoService = async (id: string, data: any, file?: a
 
 // DELETE VIDEO
 export const deleteTutorialVideoService = async (id: string) => {
-    const checkVideo = await prisma.tutorialVideo.findUnique({
-        where: { id },
-    });
-    if (!checkVideo) throw new Error("Video tidak ditemukan");
+  const checkVideo = await prisma.tutorialVideo.findUnique({
+    where: { id },
+  });
+  if (!checkVideo) throw new Error("Video tidak ditemukan");
 
-    await prisma.tutorialVideo.delete({
-        where: { id },
-    });
+  await prisma.tutorialVideo.delete({
+    where: { id },
+  });
 
-    return true;
+  return true;
 };
 
 //GET PRODUK
@@ -381,7 +386,7 @@ export const getProdukService = async () => {
 //GET DETAIL PRODUK
 export const getDetailProdukService = async (id: string) => {
   const produk = await prisma.produk.findUnique({
-      where: { id },
+    where: { id },
   });
   if (!produk) throw new Error("Produk tidak ditemukan");
   return produk;
@@ -455,25 +460,25 @@ export const deleteProdukService = async (id: string) => {
 };
 
 export const getPesananAdminService = async () => {
-    const pesanan = await prisma.pesanan.findMany({
-        include: {
-          user: true,
-          detailPesanan: {
-            include: { produk: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-    });
-    return { success: true, pesanan };
+  const pesanan = await prisma.pesanan.findMany({
+    include: {
+      user: true,
+      detailPesanan: {
+        include: { produk: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return { success: true, pesanan };
 };
 
 export const kirimPesananService = async (pesananId: string, nomorResi: string) => {
   const pesanan = await prisma.pesanan.update({
-      where: { id: pesananId },
-      data: {
-        statusPesanan: "dikirim",
-        nomorResi,
-      },
+    where: { id: pesananId },
+    data: {
+      statusPesanan: "dikirim",
+      nomorResi,
+    },
   });
 
   await prisma.notifikasi.create({
@@ -485,8 +490,8 @@ export const kirimPesananService = async (pesananId: string, nomorResi: string) 
   });
 
   io.emit("notifikasi", {
-      judul: "Pesanan Dikirim",
-      pesan: `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
+    judul: "Pesanan Dikirim",
+    pesan: `Pesanan ${pesanan.orderId} sedang dikirim. Resi: ${nomorResi}`,
   });
 
   return { success: true, data: pesanan };
